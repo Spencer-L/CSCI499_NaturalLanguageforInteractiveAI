@@ -2,6 +2,8 @@ import tqdm
 import torch
 import argparse
 from sklearn.metrics import accuracy_score
+from torch.utils.data import TensorDataset, DataLoader
+
 
 from utils import (
     get_device,
@@ -26,9 +28,9 @@ def setup_dataloader(args):
 
     # Hint: use the helper functions provided in utils.py
     # ===================================================== #
-    
-    train_loader = None
-    val_loader = None
+
+    train_loader = DataLoader(train_dataset, shuffle=True, batch_size=minibatch_size)
+    val_loader = DataLoader(val_dataset, shuffle=True, batch_size=minibatch_size)
     return train_loader, val_loader
 
 

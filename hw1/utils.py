@@ -80,28 +80,26 @@ def process_instruction_set(d):
     processed_set = []
     with open(d, "r") as data:
         trainingData = json.loads(data.read())
-        # print(trainingData["train"])
-        for ins in trainingData["train"]:
-            # preprocess instructions
-            if len(preprocess_string(ins[0][0])) > 0 and len(preprocess_string(ins[0][1][0])) > 0 and len(preprocess_string(ins[0][1][0])) > 0:
-                new_instructions = [[preprocess_string(ins[0][0]), [preprocess_string(ins[0][1][0]), preprocess_string(ins[0][1][1])]]]
-            processed_set.extend(new_instructions)
+        index = 0
+        for episodes in trainingData["train"]:
+            ep_set = []
+            for ep in episodes:
+                # preprocess instructions
+                if len(preprocess_string(ep[0])) > 0 and len(preprocess_string(ep[1][0])) > 0 and len(preprocess_string(ep[1][0])) > 0:
+                    new_instructions = [preprocess_string(ep[0]), [preprocess_string(ep[1][0]), preprocess_string(ep[1][1])]]
+                    ep_set.append(new_instructions)
+            processed_set.extend([ep_set])
+            index += 1
+            print(index)
         return processed_set
 
 def create_train_val_splits(all_lines, prop_train=0.8):
     train_lines = []
     val_lines = []
+    print(range(len(all_lines)))
     lines = [all_lines[idx] for idx in range(len(all_lines))]
     val_idxs = np.random.choice(list(range(len(lines))), size=int(len(lines) * prop_train + 0.5), replace=False)
     train_lines.extend([lines[idx] for idx in range(len(lines)) if idx not in val_idxs])
     val_lines.extend([lines[idx] for idx in range(len(lines)) if idx in val_idxs])
 
     return train_lines, val_lines
-
-def build_output_table(train):
-    actLocPairs = []
-    for _, actLocPair in train:
-        actLocPairs.append(actLocPair)
-    pairs_to_index = {p: i for i, p in enumerate(actLocPairs)}
-    index_to_pairs = {pairs_to_index[p]: p for p in pairs_to_index}
-    return pairs_to_index, index_to_pairs
