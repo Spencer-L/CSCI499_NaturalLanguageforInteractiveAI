@@ -2,6 +2,7 @@ import re
 import torch
 import numpy as np
 from collections import Counter
+import json
 
 
 def get_device(force_cpu, status=True):
@@ -74,3 +75,33 @@ def build_output_tables(train):
     index_to_actions = {actions_to_index[a]: a for a in actions_to_index}
     index_to_targets = {targets_to_index[t]: t for t in targets_to_index}
     return actions_to_index, index_to_actions, targets_to_index, index_to_targets
+
+def process_instruction_set(d):
+    processed_set = []
+    with open(d, "r") as data:
+        trainingData = json.loads(data.read())
+        # print(trainingData["train"])
+        for ins in trainingData["train"]:
+            # preprocess instructions
+            if len(preprocess_string(ins[0][0])) > 0 and len(preprocess_string(ins[0][1][0])) > 0 and len(preprocess_string(ins[0][1][0])) > 0:
+                new_instructions = [[preprocess_string(ins[0][0]), [preprocess_string(ins[0][1][0]), preprocess_string(ins[0][1][1])]]]
+            processed_set.extend(new_instructions)
+        return processed_set
+
+def create_train_val_splits(all_lines, prop_train=0.8):
+    train_lines = []
+    val_lines = []
+    lines = [all_lines[idx] for idx in range(len(all_lines))]
+    val_idxs = np.random.choice(list(range(len(lines))), size=int(len(lines) * prop_train + 0.5), replace=False)
+    train_lines.extend([lines[idx] for idx in range(len(lines)) if idx not in val_idxs])
+    val_lines.extend([lines[idx] for idx in range(len(lines)) if idx in val_idxs])
+
+    return train_lines, val_lines
+
+def build_output_table(train):
+    actLocPairs = []
+    for _, actLocPair in train:
+        actLocPairs.append(actLocPair)
+    pairs_to_index = {p: i for i, p in enumerate(actLocPairs)}
+    index_to_pairs = {pairs_to_index[p]: p for p in pairs_to_index}
+    return pairs_to_index, index_to_pairs

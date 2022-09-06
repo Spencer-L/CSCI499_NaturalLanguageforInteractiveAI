@@ -26,6 +26,7 @@ def setup_dataloader(args):
 
     # Hint: use the helper functions provided in utils.py
     # ===================================================== #
+    
     train_loader = None
     val_loader = None
     return train_loader, val_loader
@@ -255,13 +256,14 @@ if __name__ == "__main__":
     parser.add_argument(
         "--val_every", default=5, help="number of epochs between every eval loop"
     )
-    parser.add_argument(
-        "--learning_rate", default=0.0001, help="learning rate"
-    )
     # ================== TODO: CODE HERE ================== #
     # Task (optional): Add any additional command line
     # parameters you may need here
     # ===================================================== #
+    parser.add_argument(
+        "--learning_rate", default=0.0001, help="learning rate"
+    )
+    
     args = parser.parse_args()
 
     main(args)
