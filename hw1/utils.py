@@ -85,9 +85,9 @@ def process_instruction_set(d):
             ep_set = []
             for ep in episodes:
                 # preprocess instructions
-                if len(preprocess_string(ep[0])) > 0 and len(preprocess_string(ep[1][0])) > 0 and len(preprocess_string(ep[1][0])) > 0:
-                    new_instructions = [preprocess_string(ep[0]), [preprocess_string(ep[1][0]), preprocess_string(ep[1][1])]]
-                    ep_set.append(new_instructions)
+                # if len(preprocess_string(ep[0])) > 0 and len(preprocess_string(ep[1][0])) > 0 and len(preprocess_string(ep[1][0])) > 0:
+                new_instructions = [preprocess_string(ep[0]), [preprocess_string(ep[1][0]), preprocess_string(ep[1][1])]]
+                ep_set.append(new_instructions)
             processed_set.extend([ep_set])
             index += 1
             print(index)
@@ -103,3 +103,42 @@ def create_train_val_splits(all_lines, prop_train=0.8):
     val_lines.extend([lines[idx] for idx in range(len(lines)) if idx in val_idxs])
 
     return train_lines, val_lines
+
+def encode_data(data, v2i, seq_len, a2i, l2i):
+    n_lines = len(data)
+    n_acts = len(a2i)
+    n_locs = len(l2i)
+    x = np.zeros((n_lines, seq_len), dtype=np.int32)
+    y = np.zeros((n_lines, 2), dtype=np.int32)
+
+    idx = 0
+    n_early_cutoff = 0
+    n_unks = 0
+    n_tks = 0
+    for episode in data:
+        for txt, [act, loc] in episode:
+            txt = preprocess_string(txt)
+            x[idx][0] = v2i["<start>"]
+            jdx = 1
+            for word in txt.split():
+                if len(word) > 0:
+                    x[idx][jdx] = v2i[word] if word in v2i else v2i["<unk>"]
+                    n_unks += 1 if x[idx][jdx] == v2i["<unk>"] else 0
+                    n_tks += 1
+                    jdx += 1
+                    if jdx == seq_len - 1:
+                        n_early_cutoff += 1
+                        break
+            x[idx][jdx] = v2i["<end>"]
+            y[idx] = [a2i[act], l2i[loc]]
+            idx += 1
+    print(
+        "INFO: had to represent %d/%d (%.4f) tokens as unk with vocab limit %d"
+        % (n_unks, n_tks, n_unks / n_tks, len(v2i))
+    )
+    print(
+        "INFO: cut off %d instances at len %d before true ending"
+        % (n_early_cutoff, seq_len)
+    )
+    print("INFO: encoded %d instances without regard to order" % idx)
+    return x, y

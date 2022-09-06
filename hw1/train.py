@@ -29,8 +29,8 @@ def setup_dataloader(args):
     # Hint: use the helper functions provided in utils.py
     # ===================================================== #
 
-    train_loader = DataLoader(train_dataset, shuffle=True, batch_size=minibatch_size)
-    val_loader = DataLoader(val_dataset, shuffle=True, batch_size=minibatch_size)
+    train_loader = None #DataLoader(train_dataset, shuffle=True, batch_size=minibatch_size)
+    val_loader = None #DataLoader(val_dataset, shuffle=True, batch_size=minibatch_size)
     return train_loader, val_loader
 
 

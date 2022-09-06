@@ -10,6 +10,7 @@ from utils import (
     process_instruction_set,
     create_train_val_splits,
     build_output_tables,
+    encode_data,
 )
 
 def main(args):
@@ -41,7 +42,8 @@ def main(args):
     print(actions_to_index)
 
     # Encode the training and validation set inputs/outputs.
-
+    train_np_x, train_np_y = encode_data(train_lines, vocab_to_index, len_cutoff, actions_to_index, targets_to_index)
+    print(train_np_x)
 
 
 if __name__ == "__main__":
