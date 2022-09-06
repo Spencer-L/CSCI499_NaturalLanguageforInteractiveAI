@@ -54,9 +54,9 @@ def setup_optimizer(args, model):
     # Task: Initialize the loss function for action predictions
     # and target predictions. Also initialize your optimizer.
     # ===================================================== #
-    action_criterion = None
-    target_criterion = None
-    optimizer = None
+    action_criterion = torch.nn.CrossEntropyLoss()
+    target_criterion = torch.nn.CrossEntropyLoss()
+    optimizer = torch.optim.SGD(model.parameters(), lr=args.learning_rate)
 
     return action_criterion, target_criterion, optimizer
 
@@ -255,7 +255,9 @@ if __name__ == "__main__":
     parser.add_argument(
         "--val_every", default=5, help="number of epochs between every eval loop"
     )
-
+    parser.add_argument(
+        "--learning_rate", default=0.0001, help="learning rate"
+    )
     # ================== TODO: CODE HERE ================== #
     # Task (optional): Add any additional command line
     # parameters you may need here
