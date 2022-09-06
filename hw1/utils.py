@@ -81,6 +81,7 @@ def process_instruction_set(d):
     with open(d, "r") as data:
         trainingData = json.loads(data.read())
         index = 0
+        new_instructions = [[preprocess_string(ep[0]), [preprocess_string(ep[1][0]), preprocess_string(ep[1][1])]] for ep in trainingData["train"] if  len(preprocess_string(ep)) > 0]
         for episodes in trainingData["train"]:
             ep_set = []
             for ep in episodes:
@@ -131,7 +132,7 @@ def encode_data(data, v2i, seq_len, a2i, l2i):
                         break
             x[idx][jdx] = v2i["<end>"]
             y[idx] = [a2i[act], l2i[loc]]
-            idx += 1
+        idx += 1
     print(
         "INFO: had to represent %d/%d (%.4f) tokens as unk with vocab limit %d"
         % (n_unks, n_tks, n_unks / n_tks, len(v2i))
