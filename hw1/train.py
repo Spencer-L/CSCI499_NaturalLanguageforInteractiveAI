@@ -32,6 +32,7 @@ def setup_dataloader(args):
 
     # Hint: use the helper functions provided in utils.py
     # ===================================================== #
+    minibatch_size = 256
     print(f"CUDA version: {torch.version.cuda}")
     device = get_device(False)
     with open(args.in_data_fn, "r") as data:
@@ -238,6 +239,12 @@ def train(args, model, loaders, optimizer, action_criterion, target_criterion, d
 
 
 def main(args):
+    # Some hyperparameters
+    validate_every_n_epochs = 10
+    # max_epochs = args.epochs
+    learning_rate = 0.0001
+    # embedding_dim = args.emb_dim
+
     device = get_device(args.force_cpu)
 
     # get dataloaders
@@ -289,6 +296,8 @@ if __name__ == "__main__":
     parser.add_argument(
         "--learning_rate", default=0.0001, help="learning rate"
     )
+    parser.add_argument("--voc_k", type=int, help="vocabulary size", required=True)
+
     
     args = parser.parse_args()
 
