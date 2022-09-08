@@ -132,9 +132,11 @@ def encode_data(data, v2i, seq_len, a2i, l2i):
                         n_early_cutoff += 1
                         break
             inst_embed[jdx] = v2i["<end>"]
-            label_embed = np.zeros(n_acts + n_locs)
-            label_embed[a2i[act]] = 1.0
-            label_embed[l2i[loc]] = 1.0
+            label_embed = np.zeros(2)
+            # label_embed[a2i[act]] = 1.0
+            # label_embed[l2i[loc]] = 1.0
+            label_embed[0] = a2i[act]
+            label_embed[1] = l2i[loc]
             idx += 1
             x.append(inst_embed)
             y.append(label_embed)

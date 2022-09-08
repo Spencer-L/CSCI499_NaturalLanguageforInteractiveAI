@@ -121,8 +121,9 @@ def train_epoch(
         # NOTE: we assume that labels is a tensor of size Bx2 where labels[:, 0] is the
         # action label and labels[:, 1] is the target label
         # breakpoint()
-        action_loss = action_criterion(actions_out.squeeze(), labels[:,:actions_out.shape[1]])
-        target_loss = target_criterion(targets_out.squeeze(), labels[:,actions_out.shape[1]:])
+        action_loss = action_criterion(actions_out.squeeze(), labels[:,0].long())
+        target_loss = target_criterion(targets_out.squeeze(), labels[:,1].long())
+        # breakpoint()
         
         loss = action_loss + target_loss
 

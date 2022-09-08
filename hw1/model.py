@@ -47,26 +47,18 @@ class Model(torch.nn.Module):
         # linear layer
         self.fc = torch.nn.Linear(2, n_locs+n_acts)
 
-        self.sigmoid = torch.nn.Sigmoid()
+        # self.sigmoid = torch.nn.Sigmoid()
 
     def forward(self, x):
-        # batch_size, seq_len = x.size(0), x.size(1)
-
-        # h1 = self.embedding(x)
-        # # maxpooled_embeds = self.maxpool(embeds)
-        # h2, (_, _) = self.lstm(h1)
-        # h3 = self.linear(h2)
-        # out = self.sigmoid(h3)
-        # breakpoint()
 
         batch_size, seq_len = x.size(0), x.size(1)
 
         embeds = self.embedding(x)
         maxpooled_embeds = self.maxpool(embeds)
-        lstm_out, (_, _) = self.lstm(maxpooled_embeds)
+        lstm_out, (_, _) = self.lstm(maxpooled_embeds.squeeze(1))
         # squeeze out the singleton length dimension that we maxpool'd over
-        linear_out = self.fc(lstm_out.squeeze(1))
+        out = self.fc(lstm_out.squeeze(1)).squeeze(1)
         # out = lstm_out.squeeze(1)
-        out = self.sigmoid(linear_out)
+        # out = self.sigmoid(linear_out)
         # breakpoint()
         return out[:,:self.n_acts], out[:,self.n_acts:]
