@@ -1,12 +1,11 @@
 import json
-
 import tqdm
 import torch
 import argparse
 from sklearn.metrics import accuracy_score
 from torch.utils.data import TensorDataset, DataLoader
 
-
+from model import (Model)
 from utils import (
     get_device,
     preprocess_string,
@@ -34,7 +33,6 @@ def setup_dataloader(args):
     # ===================================================== #
     minibatch_size = 256
     print(f"CUDA version: {torch.version.cuda}")
-    device = get_device(False)
     with open(args.in_data_fn, "r") as data:
         trainingData = json.loads(data.read())
         # create train/val splits
@@ -59,7 +57,7 @@ def setup_dataloader(args):
         return train_loader, val_loader
 
 
-def setup_model(args):
+def setup_model(args, device):
     """
     return:
         - model: YourOwnModelClass
@@ -67,7 +65,7 @@ def setup_model(args):
     # ================== TODO: CODE HERE ================== #
     # Task: Initialize your model.
     # ===================================================== #
-    model = None
+    model = (device, len(vocab_to_index), len_cutoff, len(books_to_index), embedding_dim)
     return model
 
 
@@ -241,18 +239,18 @@ def train(args, model, loaders, optimizer, action_criterion, target_criterion, d
 def main(args):
     # Some hyperparameters
     validate_every_n_epochs = 10
-    # max_epochs = args.epochs
+    max_epochs = args.num_epochs
     learning_rate = 0.0001
-    # embedding_dim = args.emb_dim
+    embedding_dim = args.emb_dim
 
-    device = get_device(args.force_cpu)
+    device = get_device(False)
 
     # get dataloaders
-    train_loader, val_loader, maps = setup_dataloader(args)
+    train_loader, val_loader = setup_dataloader(args)
     loaders = {"train": train_loader, "val": val_loader}
 
     # build model
-    model = setup_model(args, maps, device)
+    model = setup_model(args, device)
     print(model)
 
     # get optimizer and loss functions
@@ -293,12 +291,10 @@ if __name__ == "__main__":
     # Task (optional): Add any additional command line
     # parameters you may need here
     # ===================================================== #
-    parser.add_argument(
-        "--learning_rate", default=0.0001, help="learning rate"
-    )
+    parser.add_argument("--learning_rate", default=0.0001, help="learning rate")
     parser.add_argument("--voc_k", type=int, help="vocabulary size", required=True)
+    parser.add_argument("--emb_dim", type=int, help="embedding dimension", required=True)
 
-    
     args = parser.parse_args()
 
     main(args)
