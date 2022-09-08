@@ -65,7 +65,7 @@ def setup_model(device, vocab_to_index, len_cutoff, actions_to_index, targets_to
     # ================== TODO: CODE HERE ================== #
     # Task: Initialize your model.
     # ===================================================== #
-    model = (device, len(vocab_to_index), len_cutoff, len(actions_to_index), len(targets_to_index), embedding_dim)
+    model = Model(device, len(vocab_to_index), len_cutoff, len(actions_to_index), len(targets_to_index), embedding_dim)
     return model
 
 
@@ -114,7 +114,7 @@ def train_epoch(
 
         # calculate the loss and train accuracy and perform backprop
         # NOTE: feel free to change the parameters to the model forward pass here + outputs
-        actions_out, targets_out = model(inputs, labels)
+        actions_out, targets_out = model(inputs)
 
         # calculate the action and target prediction loss
         # NOTE: we assume that labels is a tensor of size Bx2 where labels[:, 0] is the
@@ -240,7 +240,7 @@ def main(args):
     # Some hyperparameters
     validate_every_n_epochs = 10
     max_epochs = args.num_epochs
-    learning_rate = 0.0001
+    learning_rate = 0.001
     embedding_dim = args.emb_dim
 
     device = get_device(False)

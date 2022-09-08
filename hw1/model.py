@@ -26,22 +26,45 @@ class Model(torch.nn.Module):
         self.n_locs = n_locs
 
         # embedding layer
+        # self.embedding = torch.nn.Embedding(vocab_size, embedding_dim)
+        # # 
+
+        # # linear layer
+        # self.linear = torch.nn.Linear(2, n_acts+n_locs)
+
+        # embedding layer
         self.embedding = torch.nn.Embedding(vocab_size, embedding_dim, padding_idx=0)
 
         # maxpool layer
         self.maxpool = torch.nn.MaxPool2d((input_len, 1), ceil_mode=True)
 
-        # linear layer 1
-        self.fc = torch.nn.Linear(embedding_dim, n_acts)
 
-        # linear layer 2
-        self.fc = torch.nn.Linear(embedding_dim, n_locs)
+        # LSTM layer
+        self.lstm = torch.nn.LSTM(input_size=embedding_dim,
+                                  hidden_size=2,
+                                  num_layers=1)
+        
+        # linear layer
+        self.fc = torch.nn.Linear(2, n_acts+n_locs)
+
+        self.sigmoid = torch.nn.Sigmoid()
 
     def forward(self, x):
+        # batch_size, seq_len = x.size(0), x.size(1)
+
+        # h1 = self.embedding(x)
+        # # maxpooled_embeds = self.maxpool(embeds)
+        # h2, (_, _) = self.lstm(h1)
+        # h3 = self.linear(h2)
+        # out = self.sigmoid(h3)
+        # breakpoint()
+
         batch_size, seq_len = x.size(0), x.size(1)
 
         embeds = self.embedding(x)
         maxpooled_embeds = self.maxpool(embeds)
-        out = self.fc(maxpooled_embeds).squeeze(1)  # squeeze out the singleton length dimension that we maxpool'd over
-
-        return out
+        lstm_out, (_, _) = self.lstm(maxpooled_embeds)
+        linear_out = self.fc(lstm_out).squeeze(1)  # squeeze out the singleton length dimension that we maxpool'd over
+        out = self.sigmoid(linear_out)
+        
+        return out[:,:self.n_acts], out[:,self.n_acts:]
