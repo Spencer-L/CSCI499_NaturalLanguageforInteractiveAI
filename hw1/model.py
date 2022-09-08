@@ -13,7 +13,8 @@ class Model(torch.nn.Module):
          device,
          vocab_size,
          input_len,
-         n_books,
+         n_acts,
+         n_locs,
          embedding_dim
     ):
         super(Model, self).__init__()
@@ -21,7 +22,8 @@ class Model(torch.nn.Module):
         self.embedding_dim = embedding_dim
         self.vocab_size = vocab_size
         self.input_len = input_len
-        self.n_books = n_books
+        self.n_acts = n_acts
+        self.n_locs = n_locs
 
         # embedding layer
         self.embedding = torch.nn.Embedding(vocab_size, embedding_dim, padding_idx=0)
@@ -29,8 +31,11 @@ class Model(torch.nn.Module):
         # maxpool layer
         self.maxpool = torch.nn.MaxPool2d((input_len, 1), ceil_mode=True)
 
-        # linear layer
-        self.fc = torch.nn.Linear(embedding_dim, n_books)
+        # linear layer 1
+        self.fc = torch.nn.Linear(embedding_dim, n_acts)
+
+        # linear layer 2
+        self.fc = torch.nn.Linear(embedding_dim, n_locs)
 
     def forward(self, x):
         batch_size, seq_len = x.size(0), x.size(1)

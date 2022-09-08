@@ -54,10 +54,10 @@ def setup_dataloader(args):
 
         train_loader = DataLoader(train_dataset, shuffle=True, batch_size=minibatch_size)
         val_loader = DataLoader(val_dataset, shuffle=True, batch_size=minibatch_size)
-        return train_loader, val_loader
+        return train_loader, val_loader, vocab_to_index, len_cutoff, actions_to_index, targets_to_index
 
 
-def setup_model(args, device):
+def setup_model(device, vocab_to_index, len_cutoff, actions_to_index, targets_to_index, embedding_dim):
     """
     return:
         - model: YourOwnModelClass
@@ -65,7 +65,7 @@ def setup_model(args, device):
     # ================== TODO: CODE HERE ================== #
     # Task: Initialize your model.
     # ===================================================== #
-    model = (device, len(vocab_to_index), len_cutoff, len(books_to_index), embedding_dim)
+    model = (device, len(vocab_to_index), len_cutoff, len(actions_to_index), len(targets_to_index), embedding_dim)
     return model
 
 
@@ -246,11 +246,11 @@ def main(args):
     device = get_device(False)
 
     # get dataloaders
-    train_loader, val_loader = setup_dataloader(args)
+    train_loader, val_loader, vocab_to_index, len_cutoff, actions_to_index, targets_to_index = setup_dataloader(args)
     loaders = {"train": train_loader, "val": val_loader}
 
     # build model
-    model = setup_model(args, device)
+    model = setup_model(device, vocab_to_index, len_cutoff, actions_to_index, targets_to_index, args.emb_dim)
     print(model)
 
     # get optimizer and loss functions
