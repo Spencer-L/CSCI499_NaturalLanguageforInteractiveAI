@@ -35,6 +35,7 @@ def setup_dataloader(args):
     print(f"CUDA version: {torch.version.cuda}")
     with open(args.in_data_fn, "r") as data:
         trainingData = json.loads(data.read())
+        
         # create train/val splits
         train_lines, val_lines = create_train_val_splits(trainingData["train"])
         print(train_lines[0])
@@ -47,6 +48,7 @@ def setup_dataloader(args):
 
         # Encode the training and validation set inputs/outputs.
         train_np_x, train_np_y = encode_data(train_lines, vocab_to_index, len_cutoff, actions_to_index, targets_to_index)
+
         print(train_np_x)
         train_dataset = TensorDataset(torch.from_numpy(train_np_x), torch.from_numpy(train_np_y))
         val_np_x, val_np_y = encode_data(val_lines, vocab_to_index, len_cutoff, actions_to_index, targets_to_index)
@@ -115,13 +117,13 @@ def train_epoch(
         # calculate the loss and train accuracy and perform backprop
         # NOTE: feel free to change the parameters to the model forward pass here + outputs
         actions_out, targets_out = model(inputs)
-
         # calculate the action and target prediction loss
         # NOTE: we assume that labels is a tensor of size Bx2 where labels[:, 0] is the
         # action label and labels[:, 1] is the target label
-        action_loss = action_criterion(actions_out.squeeze(), labels[:, 0].long())
-        target_loss = target_criterion(targets_out.squeeze(), labels[:, 1].long())
-
+        # breakpoint()
+        action_loss = action_criterion(actions_out.squeeze(), labels[:,:actions_out.shape[1]])
+        target_loss = target_criterion(targets_out.squeeze(), labels[:,actions_out.shape[1]:])
+        
         loss = action_loss + target_loss
 
         # step optimizer and compute gradients during training
@@ -240,7 +242,7 @@ def main(args):
     # Some hyperparameters
     validate_every_n_epochs = 10
     max_epochs = args.num_epochs
-    learning_rate = 0.001
+    learning_rate = 0.0001
     embedding_dim = args.emb_dim
 
     device = get_device(False)

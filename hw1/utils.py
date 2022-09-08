@@ -109,8 +109,8 @@ def encode_data(data, v2i, seq_len, a2i, l2i):
     n_lines = len(data)
     n_acts = len(a2i)
     n_locs = len(l2i)
-    x = np.zeros((n_lines, seq_len), dtype=np.int32)
-    y = np.zeros((n_lines, 2), dtype=np.int32)
+    x = []
+    y = []
 
     idx = 0
     n_early_cutoff = 0
@@ -119,20 +119,27 @@ def encode_data(data, v2i, seq_len, a2i, l2i):
     for episode in data:
         for txt, [act, loc] in episode:
             txt = preprocess_string(txt)
-            x[idx][0] = v2i["<start>"]
+            inst_embed = np.zeros(seq_len)
+            inst_embed[0] = v2i["<start>"]
             jdx = 1
             for word in txt.split():
                 if len(word) > 0:
-                    x[idx][jdx] = v2i[word] if word in v2i else v2i["<unk>"]
-                    n_unks += 1 if x[idx][jdx] == v2i["<unk>"] else 0
+                    inst_embed[jdx] = v2i[word] if word in v2i else v2i["<unk>"]
+                    n_unks += 1 if inst_embed[jdx] == v2i["<unk>"] else 0
                     n_tks += 1
                     jdx += 1
                     if jdx == seq_len - 1:
                         n_early_cutoff += 1
                         break
-            x[idx][jdx] = v2i["<end>"]
-            y[idx] = [a2i[act], l2i[loc]]
-        idx += 1
+            inst_embed[jdx] = v2i["<end>"]
+            label_embed = np.zeros(n_acts + n_locs)
+            label_embed[a2i[act]] = 1.0
+            label_embed[l2i[loc]] = 1.0
+            idx += 1
+            x.append(inst_embed)
+            y.append(label_embed)
+    x = np.array(x, dtype=np.int32)
+    y = np.array(y)
     print(
         "INFO: had to represent %d/%d (%.4f) tokens as unk with vocab limit %d"
         % (n_unks, n_tks, n_unks / n_tks, len(v2i))
