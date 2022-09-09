@@ -187,7 +187,9 @@ def train(args, model, loaders, optimizer, action_criterion, target_criterion, d
     # weights via backpropagation
     model.train()
     idx = 1
+    val_idx = 1
     idx_arr = []
+    val_idx_arr = []
     train_act_loss_arr = []
     train_target_loss_arr = []
     train_act_acc_arr = []
@@ -199,11 +201,21 @@ def train(args, model, loaders, optimizer, action_criterion, target_criterion, d
     fig, axs = plt.subplots(8)
     fig.suptitle('Training Plots')
     axs[0].title.set_text('Training Target Loss')
-    axs[0].set(xlabel='epoch', ylabel='target_target_loss')
+    # axs[0].set(xlabel='epoch', ylabel='target_target_loss')
     axs[1].title.set_text('Training Action Loss')
-    axs[1].set(xlabel='epoch', ylabel='target_action_loss')
-    axs[2].title.set_text('Training Action Loss')
-    axs[2].set(xlabel='epoch', ylabel='target_action_accuracy')
+    # axs[1].set(xlabel='epoch', ylabel='target_action_loss')
+    axs[2].title.set_text('Training Action Accuracy')
+    # axs[2].set(xlabel='epoch', ylabel='target_action_accuracy')
+    axs[3].title.set_text('Training Target Accuracy')
+    # axs[3].set(xlabel='epoch', ylabel='target_action_accuracy')
+    axs[4].title.set_text('Val Target Loss')
+    # axs[4].set(xlabel='epoch', ylabel='target_action_accuracy')
+    axs[5].title.set_text('Val Action Loss')
+    # axs[4].set(xlabel='epoch', ylabel='target_action_accuracy')
+    axs[6].title.set_text('Val Target Accuracy')
+    # axs[4].set(xlabel='epoch', ylabel='target_action_accuracy')
+    axs[7].title.set_text('Val Action Accuracy')
+    # axs[4].set(xlabel='epoch', ylabel='target_action_accuracy')
     for epoch in tqdm.tqdm(range(args.num_epochs)):
 
         # train single epoch
@@ -268,16 +280,18 @@ def train(args, model, loaders, optimizer, action_criterion, target_criterion, d
         axs[2].plot(idx_arr, train_act_acc_arr)
         axs[3].plot(idx_arr, train_target_acc_arr)
         if epoch % args.val_every == 0:
+            val_idx_arr.append(val_idx)
             val_target_loss_arr.append(val_target_loss)
             val_act_loss_arr.append(val_action_loss)
             val_target_acc_arr.append(val_target_acc)
             val_act_acc_arr.append(val_action_acc)
-            axs[4].plot(idx_arr, val_target_loss)
-            axs[5].plot(idx_arr, val_action_loss)
-            axs[6].plot(idx_arr, val_target_acc)
-            axs[7].plot(idx_arr, val_action_acc)
+            axs[4].plot(val_idx_arr, val_target_loss)
+            axs[5].plot(val_idx_arr, val_action_loss)
+            axs[6].plot(val_idx_arr, val_target_acc)
+            axs[7].plot(val_idx_arr, val_action_acc)
+            val_idx += 1
 
-        plt.show()
+        fig.show()
         idx += 1
 
 def main(args):
