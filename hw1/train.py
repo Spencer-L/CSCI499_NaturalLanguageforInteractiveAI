@@ -199,6 +199,9 @@ def train(args, model, loaders, optimizer, action_criterion, target_criterion, d
     val_target_acc_arr=[]
     val_act_acc_arr=[]
     fig, axs = plt.subplots(8)
+    fig.set_figheight(10)
+    fig.set_figwidth(8)
+    fig.tight_layout()
     fig.suptitle('Training Plots')
     axs[0].title.set_text('Training Target Loss')
     # axs[0].set(xlabel='epoch', ylabel='target_target_loss')
@@ -285,10 +288,10 @@ def train(args, model, loaders, optimizer, action_criterion, target_criterion, d
             val_act_loss_arr.append(val_action_loss)
             val_target_acc_arr.append(val_target_acc)
             val_act_acc_arr.append(val_action_acc)
-            axs[4].plot(val_idx_arr, val_target_loss)
-            axs[5].plot(val_idx_arr, val_action_loss)
-            axs[6].plot(val_idx_arr, val_target_acc)
-            axs[7].plot(val_idx_arr, val_action_acc)
+            axs[4].plot(val_idx_arr, val_target_loss_arr)
+            axs[5].plot(val_idx_arr, val_act_loss_arr)
+            axs[6].plot(val_idx_arr, val_target_acc_arr)
+            axs[7].plot(val_idx_arr, val_act_acc_arr)
             val_idx += 1
 
         fig.show()
