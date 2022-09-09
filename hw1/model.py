@@ -43,7 +43,7 @@ class Model(torch.nn.Module):
         self.lstm = torch.nn.LSTM(input_size=embedding_dim,
                                   hidden_size=2,
                                   num_layers=1)
-        
+
         # linear layer
         self.fc = torch.nn.Linear(2, n_locs+n_acts)
 
