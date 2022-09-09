@@ -189,6 +189,21 @@ def train(args, model, loaders, optimizer, action_criterion, target_criterion, d
     idx = 1
     idx_arr = []
     train_act_loss_arr = []
+    train_target_loss_arr = []
+    train_act_acc_arr = []
+    train_target_acc_arr = []
+    val_target_loss_arr=[]
+    val_act_loss_arr=[]
+    val_target_acc_arr=[]
+    val_act_acc_arr=[]
+    fig, axs = plt.subplots(8)
+    fig.suptitle('Training Plots')
+    axs[0].title.set_text('Training Target Loss')
+    axs[0].set(xlabel='epoch', ylabel='target_target_loss')
+    axs[1].title.set_text('Training Action Loss')
+    axs[1].set(xlabel='epoch', ylabel='target_action_loss')
+    axs[2].title.set_text('Training Action Loss')
+    axs[2].set(xlabel='epoch', ylabel='target_action_accuracy')
     for epoch in tqdm.tqdm(range(args.num_epochs)):
 
         # train single epoch
@@ -244,10 +259,24 @@ def train(args, model, loaders, optimizer, action_criterion, target_criterion, d
     # 3) validation loss, 4) validation accuracy
     # ===================================================== #
         idx_arr.append(idx)
-        plt.xlabel('target_target_loss')
-        plt.ylabel('epoch')
-        train_act_loss_arr.append(train_target_loss)
-        plt.plot(idx_arr, train_act_loss_arr)
+        train_target_loss_arr.append(train_target_loss)
+        train_act_loss_arr.append(train_action_loss)
+        train_act_acc_arr.append(train_action_acc)
+        train_target_acc_arr.append(train_target_acc)
+        axs[0].plot(idx_arr, train_target_loss_arr)
+        axs[1].plot(idx_arr, train_act_loss_arr)
+        axs[2].plot(idx_arr, train_act_acc_arr)
+        axs[3].plot(idx_arr, train_target_acc_arr)
+        if epoch % args.val_every == 0:
+            val_target_loss_arr.append(val_target_loss)
+            val_act_loss_arr.append(val_action_loss)
+            val_target_acc_arr.append(val_target_acc)
+            val_act_acc_arr.append(val_action_acc)
+            axs[4].plot(idx_arr, val_target_loss)
+            axs[5].plot(idx_arr, val_action_loss)
+            axs[6].plot(idx_arr, val_target_acc)
+            axs[7].plot(idx_arr, val_action_acc)
+
         plt.show()
         idx += 1
 
