@@ -1,4 +1,8 @@
 import json
+
+import matplotlib.pyplot as plt
+import numpy
+import numpy as np
 import tqdm
 import torch
 import argparse
@@ -35,7 +39,7 @@ def setup_dataloader(args):
     print(f"CUDA version: {torch.version.cuda}")
     with open(args.in_data_fn, "r") as data:
         trainingData = json.loads(data.read())
-        
+
         # create train/val splits
         train_lines, val_lines = create_train_val_splits(trainingData["train"])
         print(train_lines[0])
@@ -182,7 +186,9 @@ def train(args, model, loaders, optimizer, action_criterion, target_criterion, d
     # In each epoch we compute loss on each sample in our dataset and update the model
     # weights via backpropagation
     model.train()
-
+    idx = 1
+    idx_arr = []
+    train_act_loss_arr = []
     for epoch in tqdm.tqdm(range(args.num_epochs)):
 
         # train single epoch
@@ -237,7 +243,13 @@ def train(args, model, loaders, optimizer, action_criterion, target_criterion, d
     # 4 figures for 1) training loss, 2) training accuracy,
     # 3) validation loss, 4) validation accuracy
     # ===================================================== #
-
+        idx_arr.append(idx)
+        plt.xlabel('target_target_loss')
+        plt.ylabel('epoch')
+        train_act_loss_arr.append(train_target_loss)
+        plt.plot(idx_arr, train_act_loss_arr)
+        plt.show()
+        idx += 1
 
 def main(args):
     # Some hyperparameters
@@ -246,7 +258,7 @@ def main(args):
     learning_rate = 0.0001
     embedding_dim = args.emb_dim
 
-    device = get_device(False)
+    device = get_device(True)
 
     # get dataloaders
     train_loader, val_loader, vocab_to_index, len_cutoff, actions_to_index, targets_to_index = setup_dataloader(args)
