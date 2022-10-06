@@ -1,6 +1,7 @@
 import json
 import gensim
 import tqdm
+import numpy as np
 
 
 def read_analogies(analogies_fn):
@@ -24,3 +25,14 @@ def save_word2vec_format(fname, model, i2v):
                     "%s %s\n" % (word, " ".join("%f" % val for val in row))
                 )
             )
+
+def create_train_val_splits(all_lines, prop_train=0.8):
+    train_lines = []
+    val_lines = []
+    print(range(len(all_lines)))
+    lines = [all_lines[idx] for idx in range(len(all_lines))]
+    val_idxs = np.random.choice(list(range(len(lines))), size=int(len(lines) * prop_train + 0.5), replace=False)
+    train_lines.extend([lines[idx] for idx in range(len(lines)) if idx not in val_idxs])
+    val_lines.extend([lines[idx] for idx in range(len(lines)) if idx in val_idxs])
+
+    return train_lines, val_lines

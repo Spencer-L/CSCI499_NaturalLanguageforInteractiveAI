@@ -3,6 +3,8 @@ import os
 import tqdm
 import torch
 from sklearn.metrics import accuracy_score
+from torch.utils.data import TensorDataset
+import numpy as np
 
 from eval_utils import downstream_validation
 import utils
@@ -45,8 +47,32 @@ def setup_dataloader(args):
     # dataloaders.
     # ===================================================== #
 
-    train_loader = None
-    val_loader = None
+    window_size = 2
+    idx_pairs = []
+    # for each sentence
+    for sentence in sentences:
+        indices = [vocab_to_index[word] for word in sentence]
+        # for each word, treated as center word
+        for center_word_pos in range(len(indices)):
+            # for each window position
+            for w in range(-window_size, window_size + 1):
+                context_word_pos = center_word_pos + w
+                # make soure not jump out sentence
+                if context_word_pos < 0 or context_word_pos >= len(indices) or center_word_pos == context_word_pos:
+                    continue
+                context_word_idx = indices[context_word_pos]
+                idx_pairs.append((indices[center_word_pos], context_word_idx))
+
+    idx_pairs = np.array(idx_pairs)  # it will be useful to have this as numpy array
+
+    train_lines, val_lines = utils.create_train_val_splits(sentences)
+
+    train_dataset = TensorDataset(torch.from_numpy(encoded_sentences), torch.from_numpy(lens))
+    train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True)
+
+    val_dataset = TensorDataset(torch.from_numpy(encoded_sentences), torch.from_numpy(lens))
+    val_loader = torch.utils.data.DataLoader(val_dataset, batch_size=args.batch_size, shuffle=True)
+
     return train_loader, val_loader
 
 
@@ -58,6 +84,7 @@ def setup_model(args):
     # ================== TODO: CODE HERE ================== #
     # Task: Initialize your CBOW or Skip-Gram model.
     # ===================================================== #
+    # model = Model(device)
     model = None
     return model
 
