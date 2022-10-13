@@ -10,7 +10,9 @@ from eval_utils import downstream_validation
 import utils
 import data_utils
 
-
+from utils import(
+    create_train_val_splits
+)
 
 def main(args):
     """
@@ -48,7 +50,8 @@ def main(args):
     # dataloaders.
     # ===================================================== #
 
-    print(encoded_sentences)
+    train_lines, val_lines = create_train_val_splits(encoded_sentences)
+    print(train_lines)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
