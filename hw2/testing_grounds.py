@@ -48,29 +48,14 @@ def main(args):
     # dataloaders.
     # ===================================================== #
 
-    window_size = 2
-    idx_pairs = []
-    # for each sentence
-    for sentence in sentences:
-        indices = [vocab_to_index[word] for word in sentence]
-        # for each word, treated as center word
-        for center_word_pos in range(len(indices)):
-            # for each window position
-            for w in range(-window_size, window_size + 1):
-                context_word_pos = center_word_pos + w
-                # make soure not jump out sentence
-                if context_word_pos < 0 or context_word_pos >= len(indices) or center_word_pos == context_word_pos:
-                    continue
-                context_word_idx = indices[context_word_pos]
-                idx_pairs.append((indices[center_word_pos], context_word_idx))
-
-    idx_pairs = np.array(idx_pairs)  # it will be useful to have this as numpy array
-    print(idx_pairs)
-
+    print(encoded_sentences)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--data_dir", type=str, help="where the book dataset is stored")
+    parser.add_argument(
+        "--vocab_size", type=int, default=3000, help="size of vocabulary"
+    )
 
     # ======================= NOTE ======================== #
     # If you adjust the vocab_size down below 3000, there
