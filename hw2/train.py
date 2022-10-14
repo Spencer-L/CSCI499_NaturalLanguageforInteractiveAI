@@ -73,7 +73,7 @@ def setup_dataloader(args):
 
     X = []
     Y = []
-    encoded_sentences = encoded_sentences[:int(0.25 * len(encoded_sentences))]
+    encoded_sentences = encoded_sentences[:int(0.1 * len(encoded_sentences))]
     for sentence in tqdm.tqdm(encoded_sentences, desc="Sentences"):
         for i in range(2, len(sentence) - 2):
             X.append(
