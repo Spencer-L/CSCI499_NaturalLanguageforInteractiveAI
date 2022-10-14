@@ -2,6 +2,23 @@ import json
 import gensim
 import tqdm
 import numpy as np
+import torch
+
+def get_device(force_cpu, status=True):
+    # if not force_cpu and torch.backends.mps.is_available():
+    # 	device = torch.device('mps')
+    # 	if status:
+    # 		print("Using MPS")
+    # elif not force_cpu and torch.cuda.is_available():
+    if not force_cpu and torch.cuda.is_available():
+        device = torch.device("cuda")
+        if status:
+            print("Using CUDA")
+    else:
+        device = torch.device("cpu")
+        if status:
+            print("Using CPU")
+    return device
 
 
 def read_analogies(analogies_fn):

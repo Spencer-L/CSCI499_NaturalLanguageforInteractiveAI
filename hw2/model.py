@@ -9,6 +9,7 @@ class CBOW_Model(nn.Module):
             embedding_dim=EMBED_DIMENSION,
             max_norm=EMBED_MAX_NORM,
         )
+        self.softmax = nn.Softmax()
         self.linear = nn.Linear(
             in_features=EMBED_DIMENSION,
             out_features=vocab_size,

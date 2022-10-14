@@ -23,7 +23,7 @@ def setup_dataloader(args):
     """
 
     # read in training data from books dataset
-    sentences = data_utils.process_book_dir(args.books_dir)
+    sentences = data_utils.process_book_dir(args.data_dir)
 
     # build one hot maps for input and output
     (
@@ -52,27 +52,55 @@ def setup_dataloader(args):
     # ===================================================== #
 
     # create train/val splits
-    train_words, val_words = create_train_val_splits(encoded_sentences)
+    # train_words, val_words = create_train_val_splits(encoded_sentences)
 
     # make contexts
-    train_context = []
-    for i in range(2, len(train_words) - 2):
-        context = [train_words[i + 2], train_words[i + 1],
-                   train_words[i - 1], train_words[i - 2]]
-        target = train_words[i]
-        train_context.append((context, target))
+    # def transform_sentence(sentence, pbar):
+    #     pbar.update(1)
+    #     context_target = []
+    #     for i in range(2, len(sentence) - 2):
+    #         context = [sentence[i + 2], sentence[i + 1],
+    #                    sentence[i - 1], sentence[i - 2]]
+    #         target = sentence[i]
+    #         context_target.append((context, target))
+    #         if sentence[i + 2] == vocab_to_index['<end>']:
+    #             break
+    #     return np.array(context_target)
+    #
+    # with tqdm.tqdm(total=len(encoded_sentences)) as pbar:
+    #     context_target = np.vectorize(transform_sentence)(encoded_sentences, pbar)
+    #     print(context_target.shape)
 
-    val_context = []
-    for i in range(2, len(val_words) - 2):
-        context = [val_words[i + 2], val_words[i + 1],
-                   val_words[i - 1], val_words[i - 2]]
-        target = val_words[i]
-        val_context.append((context, target))
+    X = []
+    Y = []
+    encoded_sentences = encoded_sentences[:int(0.25 * len(encoded_sentences))]
+    for sentence in tqdm.tqdm(encoded_sentences, desc="Sentences"):
+        for i in range(2, len(sentence) - 2):
+            X.append(
+                [sentence[i + 2], sentence[i + 1],
+                 sentence[i - 1], sentence[i - 2]]
+                     )
+            Y.append(sentence[i])
+            if sentence[i + 2] == vocab_to_index['<end>']:
+                break
+
+    print("finished context target transformation")
+
+    X = np.array(X)
+    Y = np.array(Y)
+
+    cut_off = int(len(X)*0.9)
+    # np.random.shuffle(context_target)
+    # print("shuffling completed")
+    x_train, y_train = X[:cut_off], Y[:cut_off]
+    x_val, y_val = X[cut_off + 1:], Y[cut_off+1:]
+    print(x_train.shape, y_train.shape, x_val.shape, y_val.shape)
+
 
     # make data loaders
-    train_dataset = TensorDataset(torch.from_numpy(train_context), torch.from_numpy(lens))
+    train_dataset = TensorDataset(torch.from_numpy(x_train), torch.from_numpy(y_train))
     train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True)
-    val_dataset = TensorDataset(torch.from_numpy(val_context), torch.from_numpy(lens))
+    val_dataset = TensorDataset(torch.from_numpy(x_val), torch.from_numpy(y_val))
     val_loader = torch.utils.data.DataLoader(val_dataset, batch_size=args.batch_size, shuffle=True)
 
     return train_loader, val_loader
@@ -99,8 +127,8 @@ def setup_optimizer(args, model):
     # Task: Initialize the loss function for predictions. 
     # Also initialize your optimizer.
     # ===================================================== #
-    criterion = None
-    optimizer = None
+    criterion = torch.nn.CrossEntropyLoss()
+    optimizer = torch.optim.SGD(model.parameters(), lr=args.learning_rate)
     return criterion, optimizer
 
 
@@ -128,7 +156,7 @@ def train_epoch(
 
         # calculate the loss and train accuracy and perform backprop
         # NOTE: feel free to change the parameters to the model forward pass here + outputs
-        pred_logits = model(inputs, labels)
+        pred_logits = model(inputs)
 
         # calculate prediction loss
         loss = criterion(pred_logits.squeeze(), labels)
@@ -294,6 +322,9 @@ if __name__ == "__main__":
     # Task (optional): Add any additional command line
     # parameters you may need here
     # ===================================================== #
+
+    parser.add_argument("--learning_rate", default=0.0001, help="learning rate")
+
 
     args = parser.parse_args()
     main(args)
