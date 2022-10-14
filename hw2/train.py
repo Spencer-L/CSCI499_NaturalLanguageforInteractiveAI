@@ -103,7 +103,7 @@ def setup_dataloader(args):
     val_dataset = TensorDataset(torch.from_numpy(x_val), torch.from_numpy(y_val))
     val_loader = torch.utils.data.DataLoader(val_dataset, batch_size=args.batch_size, shuffle=True)
 
-    return train_loader, val_loader
+    return train_loader, val_loader, index_to_vocab
 
 def setup_model(args):
     """
@@ -201,7 +201,7 @@ def validate(args, model, loader, optimizer, criterion, device):
 
 
 def main(args):
-    device = utils.get_device(args.force_cpu)
+    device = utils.get_device(False)
 
     # load analogies for downstream eval
     external_val_analogies = utils.read_analogies(args.analogies_fn)
@@ -213,7 +213,7 @@ def main(args):
         return
 
     # get dataloaders
-    train_loader, val_loader = setup_dataloader(args)
+    train_loader, val_loader, i2v = setup_dataloader(args)
     loaders = {"train": train_loader, "val": val_loader}
 
     # build model
@@ -274,7 +274,7 @@ def main(args):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--output_dir", type=str, help="where to save training outputs")
+    parser.add_argument("--outputs_dir", type=str, help="where to save training outputs")
     parser.add_argument("--data_dir", type=str, help="where the book dataset is stored")
     parser.add_argument(
         "--downstream_eval",
@@ -324,7 +324,6 @@ if __name__ == "__main__":
     # ===================================================== #
 
     parser.add_argument("--learning_rate", default=0.0001, help="learning rate")
-
 
     args = parser.parse_args()
     main(args)
