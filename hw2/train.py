@@ -9,7 +9,11 @@ import numpy as np
 from eval_utils import downstream_validation
 import utils
 import data_utils
+from utils import(
+    create_train_val_splits
+)
 
+from model import (CBOW_Model)
 
 def setup_dataloader(args):
     """
@@ -47,34 +51,31 @@ def setup_dataloader(args):
     # dataloaders.
     # ===================================================== #
 
-    window_size = 2
-    idx_pairs = []
-    # for each sentence
-    for sentence in sentences:
-        indices = [vocab_to_index[word] for word in sentence]
-        # for each word, treated as center word
-        for center_word_pos in range(len(indices)):
-            # for each window position
-            for w in range(-window_size, window_size + 1):
-                context_word_pos = center_word_pos + w
-                # make soure not jump out sentence
-                if context_word_pos < 0 or context_word_pos >= len(indices) or center_word_pos == context_word_pos:
-                    continue
-                context_word_idx = indices[context_word_pos]
-                idx_pairs.append((indices[center_word_pos], context_word_idx))
+    # create train/val splits
+    train_words, val_words = create_train_val_splits(encoded_sentences)
 
-    idx_pairs = np.array(idx_pairs)  # it will be useful to have this as numpy array
+    # make contexts
+    train_context = []
+    for i in range(2, len(train_words) - 2):
+        context = [train_words[i + 2], train_words[i + 1],
+                   train_words[i - 1], train_words[i - 2]]
+        target = train_words[i]
+        train_context.append((context, target))
 
-    train_lines, val_lines = utils.create_train_val_splits(sentences)
+    val_context = []
+    for i in range(2, len(val_words) - 2):
+        context = [val_words[i + 2], val_words[i + 1],
+                   val_words[i - 1], val_words[i - 2]]
+        target = val_words[i]
+        val_context.append((context, target))
 
-    train_dataset = TensorDataset(torch.from_numpy(encoded_sentences), torch.from_numpy(lens))
+    # make data loaders
+    train_dataset = TensorDataset(torch.from_numpy(train_context), torch.from_numpy(lens))
     train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True)
-
-    val_dataset = TensorDataset(torch.from_numpy(encoded_sentences), torch.from_numpy(lens))
+    val_dataset = TensorDataset(torch.from_numpy(val_context), torch.from_numpy(lens))
     val_loader = torch.utils.data.DataLoader(val_dataset, batch_size=args.batch_size, shuffle=True)
 
     return train_loader, val_loader
-
 
 def setup_model(args):
     """
@@ -84,8 +85,7 @@ def setup_model(args):
     # ================== TODO: CODE HERE ================== #
     # Task: Initialize your CBOW or Skip-Gram model.
     # ===================================================== #
-    # model = Model(device)
-    model = None
+    model = CBOW_Model(args.vocab_size)
     return model
 
 

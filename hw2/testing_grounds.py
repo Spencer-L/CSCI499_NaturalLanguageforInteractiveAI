@@ -50,8 +50,31 @@ def main(args):
     # dataloaders.
     # ===================================================== #
 
-    train_lines, val_lines = create_train_val_splits(encoded_sentences)
-    print(train_lines)
+    # create train/val splits
+    train_words, val_words = create_train_val_splits(encoded_sentences)
+
+    # make contexts
+    train_context = []
+    for i in range(2, len(train_words) - 2):
+        context = [train_words[i + 2], train_words[i + 1],
+                   train_words[i - 1], train_words[i - 2]]
+        target = train_words[i]
+        train_context.append((context, target))
+
+    val_context = []
+    for i in range(2, len(val_words) - 2):
+        context = [val_words[i + 2], val_words[i + 1],
+                   val_words[i - 1], val_words[i - 2]]
+        target = val_words[i]
+        val_context.append((context, target))
+
+    # make data loaders
+    train_dataset = TensorDataset(torch.from_numpy(train_context), torch.from_numpy(lens))
+    train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True)
+    val_dataset = TensorDataset(torch.from_numpy(val_context), torch.from_numpy(lens))
+    val_loader = torch.utils.data.DataLoader(val_dataset, batch_size=args.batch_size, shuffle=True)
+
+    return train_loader, val_loader
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()

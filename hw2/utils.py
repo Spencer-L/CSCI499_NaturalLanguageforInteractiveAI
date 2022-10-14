@@ -26,13 +26,23 @@ def save_word2vec_format(fname, model, i2v):
                 )
             )
 
-def create_train_val_splits(all_lines, prop_train=0.8):
-    train_lines = []
-    val_lines = []
-    print(range(len(all_lines)))
-    lines = [all_lines[idx] for idx in range(len(all_lines))]
-    val_idxs = np.random.choice(list(range(len(lines))), size=int(len(lines) * prop_train + 0.5), replace=False)
-    train_lines.extend([lines[idx] for idx in range(len(lines)) if idx not in val_idxs])
-    val_lines.extend([lines[idx] for idx in range(len(lines)) if idx in val_idxs])
+def create_train_val_splits(all_sentences, prop_train=0.8):
+    train_words = []
+    val_words = []
+    words = []
+    # sentences = [all_sentences[idx] for idx in range(len(all_sentences))]
+    for sentence in all_sentences:
+        for word in sentence:
+            if word != 0 and word not in words:
+                words.append(word)
+    val_idxs = np.random.choice(list(range(len(words))), size=int(len(words) * prop_train + 0.5), replace=False)
 
-    return train_lines, val_lines
+    for idx in range(len(words)):
+        if idx in val_idxs:
+            train_words.extend([words[idx]])
+        else:
+            val_words.extend([words[idx]])
+        # train_words.extend([words[idx] for idx in range(len(words)) if idx not in val_idxs])
+        # val_words.extend([words[idx] for idx in range(len(words)) if idx in val_idxs])
+
+    return train_words, val_words
