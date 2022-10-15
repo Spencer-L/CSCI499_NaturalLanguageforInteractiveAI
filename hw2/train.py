@@ -73,14 +73,16 @@ def setup_dataloader(args):
 
     X = []
     Y = []
-    encoded_sentences = encoded_sentences[:int(0.1 * len(encoded_sentences))]
+    encoded_sentences = encoded_sentences[:int(len(encoded_sentences) * 0.1)]
     for sentence in tqdm.tqdm(encoded_sentences, desc="Sentences"):
         for i in range(2, len(sentence) - 2):
             X.append(
                 [sentence[i + 2], sentence[i + 1],
                  sentence[i - 1], sentence[i - 2]]
                      )
-            Y.append(sentence[i])
+            label_encoding = np.zeros(args.vocab_size)
+            label_encoding[sentence[i]] = 1
+            Y.append(label_encoding)
             if sentence[i + 2] == vocab_to_index['<end>']:
                 break
 
@@ -88,6 +90,8 @@ def setup_dataloader(args):
 
     X = np.array(X)
     Y = np.array(Y)
+
+    
 
     cut_off = int(len(X)*0.9)
     # np.random.shuffle(context_target)
@@ -152,7 +156,7 @@ def train_epoch(
     # NOTE: you may have additional outputs from the loader __getitem__, you can modify this
     for (inputs, labels) in tqdm.tqdm(loader):
         # put model inputs to device
-        inputs, labels = inputs.to(device).long(), labels.to(device).long()
+        inputs, labels = inputs.to(device).long(), labels.to(device).float()
 
         # calculate the loss and train accuracy and perform backprop
         # NOTE: feel free to change the parameters to the model forward pass here + outputs
@@ -173,6 +177,7 @@ def train_epoch(
         # compute metrics
         preds = pred_logits.argmax(-1)
         pred_labels.extend(preds.cpu().numpy())
+        labels = labels.argmax(-1)
         target_labels.extend(labels.cpu().numpy())
 
     acc = accuracy_score(pred_labels, target_labels)
@@ -267,7 +272,7 @@ def main(args):
 
 
         if epoch % args.save_every == 0:
-            ckpt_file = os.path.join(args.output_dir, "model.ckpt")
+            ckpt_file = os.path.join(args.outputs_dir, "model.ckpt")
             print("saving model to ", ckpt_file)
             torch.save(model, ckpt_file)
 
