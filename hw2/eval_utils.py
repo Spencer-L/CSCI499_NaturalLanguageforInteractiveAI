@@ -38,7 +38,7 @@ def downstream_validation(word_vectors_fn, external_val_analogies):
             topn_words = [r[0] for r in result]
         except KeyError as err:  # word not in vocabulary; only possible when loading external word vectors
             topn_words = [None]
-            print("WARNING: KeyError: {0}".format(err))
+            # print("WARNING: KeyError: {0}".format(err))
         if d in topn_words:
             t_correct[t] += 1 / (topn_words.index(d) + 1)  # reciprocol rank score
             r_correct[(t, r)] += 1 / (topn_words.index(d) + 1)  # reciprocol rank score

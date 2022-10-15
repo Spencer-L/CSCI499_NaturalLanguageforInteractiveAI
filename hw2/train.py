@@ -328,7 +328,7 @@ if __name__ == "__main__":
     # parameters you may need here
     # ===================================================== #
 
-    parser.add_argument("--learning_rate", default=0.0001, help="learning rate")
+    parser.add_argument("--learning_rate", default=0.05, help="learning rate")
 
     args = parser.parse_args()
     main(args)
