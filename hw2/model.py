@@ -16,3 +16,11 @@ class CBOW_Model(nn.Module):
             out_features=vocab_size,
         )
         self.softmax = nn.Softmax(dim=1)
+
+
+    def forward(self, inputs_):
+        x = self.embed(inputs_)
+        x = x.mean(axis=1)
+        x = self.linear(x)
+        # x = self.softmax(x)
+        return x
