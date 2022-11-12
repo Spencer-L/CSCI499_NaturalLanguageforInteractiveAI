@@ -89,3 +89,50 @@ def prefix_match(predicted_labels, gt_labels):
     pm = (1.0 / seq_length) * i
 
     return pm
+def encode_data(data, v2i, seq_len, a2i, l2i):
+    n_lines = len(data)
+    n_acts = len(a2i)
+    n_locs = len(l2i)
+    x = []
+    y = []
+
+    idx = 0
+    n_early_cutoff = 0
+    n_unks = 0
+    n_tks = 0
+    for episode in data:
+        for txt, [act, loc] in episode:
+            txt = preprocess_string(txt)
+            inst_embed = np.zeros(seq_len)
+            inst_embed[0] = v2i["<start>"]
+            jdx = 1
+            for word in txt.split():
+                if len(word) > 0:
+                    inst_embed[jdx] = v2i[word] if word in v2i else v2i["<unk>"]
+                    n_unks += 1 if inst_embed[jdx] == v2i["<unk>"] else 0
+                    n_tks += 1
+                    jdx += 1
+                    if jdx == seq_len - 1:
+                        n_early_cutoff += 1
+                        break
+            inst_embed[jdx] = v2i["<end>"]
+            label_embed = np.zeros(2)
+            # label_embed[a2i[act]] = 1.0
+            # label_embed[l2i[loc]] = 1.0
+            label_embed[0] = a2i[act]
+            label_embed[1] = l2i[loc]
+            idx += 1
+            x.append(inst_embed)
+            y.append(label_embed)
+    x = np.array(x, dtype=np.int32)
+    y = np.array(y)
+    print(
+        "INFO: had to represent %d/%d (%.4f) tokens as unk with vocab limit %d"
+        % (n_unks, n_tks, n_unks / n_tks, len(v2i))
+    )
+    print(
+        "INFO: cut off %d instances at len %d before true ending"
+        % (n_early_cutoff, seq_len)
+    )
+    print("INFO: encoded %d instances without regard to order" % idx)
+    return x, y

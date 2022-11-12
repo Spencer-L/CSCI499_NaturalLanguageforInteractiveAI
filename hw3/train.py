@@ -1,14 +1,17 @@
+import json
 import tqdm
 import torch
 import argparse
 from sklearn.metrics import accuracy_score
+from torch.utils.data import TensorDataset, DataLoader
 
 from utils import (
     get_device,
     preprocess_string,
     build_tokenizer_table,
     build_output_tables,
-    prefix_match
+    prefix_match,
+    encode_data
 )
 
 
@@ -27,8 +30,28 @@ def setup_dataloader(args):
 
     # Hint: use the helper functions provided in utils.py
     # ===================================================== #
-    train_loader = None
-    val_loader = None
+    with open(args.in_data_fn, "r") as data:
+        # create train/val split
+        dataset = json.loads(data.read())
+        train_set = dataset["train"]
+        val_set = dataset["valid_seen"]
+
+        # tokenize
+        vocab_to_index, index_to_vocab, len_cutoff = build_tokenizer_table(train_set, vocab_size=args.voc_k)
+        actions_to_index, index_to_actions, targets_to_index, index_to_targets = build_output_tables(train_set)
+        print(vocab_to_index)
+        print(actions_to_index)
+
+        # Encode the training and validation set inputs/outputs.
+        train_np_x, train_np_y = encode_data(train_set, vocab_to_index, len_cutoff, actions_to_index, targets_to_index)
+
+        print(train_np_x)
+        train_dataset = TensorDataset(torch.from_numpy(train_np_x), torch.from_numpy(train_np_y))
+        val_np_x, val_np_y = encode_data(val_set, vocab_to_index, len_cutoff, actions_to_index, targets_to_index)
+        val_dataset = TensorDataset(torch.from_numpy(val_np_x), torch.from_numpy(val_np_y))
+
+    train_loader = DataLoader(train_dataset, shuffle=True, batch_size=args.batch_size)
+    val_loader = DataLoader(val_dataset, shuffle=True, batch_size=args.batch_size)
     return train_loader, val_loader
 
 
@@ -251,6 +274,8 @@ if __name__ == "__main__":
     # Task (optional): Add any additional command line
     # parameters you may need here
     # ===================================================== #
+    parser.add_argument("--voc_k", type=int, default=1000, help="vocab size")
+
     args = parser.parse_args()
 
     main(args)

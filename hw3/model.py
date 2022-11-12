@@ -1,7 +1,7 @@
 # IMPLEMENT YOUR MODEL CLASS HERE
-
 import torch.nn as nn
 
+from transformers import BertConfig, BertModel
 
 class Encoder(nn.Module):
     """
@@ -10,11 +10,17 @@ class Encoder(nn.Module):
     TODO: edit the forward pass arguments to suit your needs
     """
 
+
     def __init__(self):
-        pass
+        # # Building the config
+        # config = BertConfig()
+        # # Building the model from the config
+        # self.bert = BertModel(config)
+
 
     def forward(self, x):
-        pass
+        # return self.bert(x)
+
 
 
 class Decoder(nn.Module):

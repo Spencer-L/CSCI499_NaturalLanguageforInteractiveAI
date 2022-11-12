@@ -17,7 +17,6 @@ class CBOW_Model(nn.Module):
         )
         self.softmax = nn.Softmax(dim=1)
 
-
     def forward(self, inputs_):
         x = self.embed(inputs_)
         x = x.mean(axis=1)
