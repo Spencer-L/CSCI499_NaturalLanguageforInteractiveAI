@@ -2,8 +2,6 @@
 import torch
 import torch.nn as nn
 
-from transformers import BertConfig, BertModel
-
 class Encoder(nn.Module):
     """
     Encode a sequence of tokens. Run the input sequence
