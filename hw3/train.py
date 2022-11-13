@@ -151,14 +151,15 @@ def train_epoch(
         # Feel free to change the input to these functions.
         """
         # TODO: add code to log these metrics
-        # output = torch.hstack([torch.argmax(output[:, :8]), torch.argmax(output[:, 8:])])
-        # em = output == labels
+        output = torch.hstack([torch.argmax(output[:, :8]), torch.argmax(output[:, 8:])])
+        em = output == labels
+        acc = torch.sum(em[:, 0]*em[:, 1])/em.shape[0]
         # prefix_em = prefix_em(output, labels)
-        acc = None
+        # acc = 0.0
 
         # logging
         epoch_loss += loss.item()
-        # epoch_acc += acc.item()
+        epoch_acc += acc.item()
 
     epoch_loss /= len(loader)
     epoch_acc /= len(loader)
