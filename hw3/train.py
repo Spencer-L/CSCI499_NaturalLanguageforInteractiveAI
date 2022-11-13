@@ -151,9 +151,9 @@ def train_epoch(
         # Feel free to change the input to these functions.
         """
         # TODO: add code to log these metrics
-        output = torch.hstack([torch.argmax(output[:, :8]), torch.argmax(output[:, 8:])])
+        output = torch.vstack([output[:, :8].argmax(1), output[:, 8:].argmax(1)]).T
         em = output == labels
-        acc = torch.sum(em[:, 0]*em[:, 1])/em.shape[0]
+        acc = torch.sum(em[:, 0]*em[:, 1])/output.shape[0]
         # prefix_em = prefix_em(output, labels)
         # acc = 0.0
 
