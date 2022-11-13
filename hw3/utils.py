@@ -54,6 +54,7 @@ def build_tokenizer_table(train, vocab_size=1000):
     vocab_to_index["<end>"] = 2
     vocab_to_index["<unk>"] = 3
     index_to_vocab = {vocab_to_index[w]: w for w in vocab_to_index}
+    # breakpoint()
     return (
         vocab_to_index,
         index_to_vocab,

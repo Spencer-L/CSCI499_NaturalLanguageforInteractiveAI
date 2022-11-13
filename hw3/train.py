@@ -4,6 +4,7 @@ import torch
 import argparse
 from sklearn.metrics import accuracy_score
 from torch.utils.data import TensorDataset, DataLoader
+from model import (EncoderDecoder)
 
 from utils import (
     get_device,
@@ -52,10 +53,10 @@ def setup_dataloader(args):
 
     train_loader = DataLoader(train_dataset, shuffle=True, batch_size=args.batch_size)
     val_loader = DataLoader(val_dataset, shuffle=True, batch_size=args.batch_size)
-    return train_loader, val_loader
+    return train_loader, val_loader, actions_to_index, targets_to_index, vocab_to_index, len_cutoff
 
 
-def setup_model(args):
+def setup_model(args, actions_to_index, targets_to_index, n_voc, len_cutoff):
     """
     return:
         - model: YourOwnModelClass
@@ -77,7 +78,7 @@ def setup_model(args):
     # of feeding the model prediction into the recurrent model,
     # you will give the embedding of the target token.
     # ===================================================== #
-    model = None
+    model = EncoderDecoder(args.emb_dim, len(actions_to_index), len(targets_to_index), len(n_voc), len_cutoff)
     return model
 
 
@@ -91,20 +92,20 @@ def setup_optimizer(args, model):
     # Task: Initialize the loss function for action predictions
     # and target predictions. Also initialize your optimizer.
     # ===================================================== #
-    criterion = None
-    optimizer = None
+    criterion = torch.nn.CrossEntropyLoss()
+    optimizer = torch.optim.SGD(model.parameters(), lr=args.learning_rate)
 
     return criterion, optimizer
 
 
 def train_epoch(
-    args,
-    model,
-    loader,
-    optimizer,
-    criterion,
-    device,
-    training=True,
+        args,
+        model,
+        loader,
+        optimizer,
+        criterion,
+        device,
+        training=True,
 ):
     """
     # TODO: implement function for greedy decoding.
@@ -129,12 +130,12 @@ def train_epoch(
     # NOTE: you may have additional outputs from the loader __getitem__, you can modify this
     for (inputs, labels) in loader:
         # put model inputs to device
-        inputs, labels = inputs.to(device), labels.to(device)
+        inputs, labels = inputs.to(device).float(), labels.to(device)
 
         # calculate the loss and train accuracy and perform backprop
         # NOTE: feel free to change the parameters to the model forward pass here + outputs
-        output = model(inputs, labels)
-
+        output = model(inputs)
+        # breakpoint()
         loss = criterion(output.squeeze(), labels[:, 0].long())
 
         # step optimizer and compute gradients during training
@@ -150,13 +151,14 @@ def train_epoch(
         # Feel free to change the input to these functions.
         """
         # TODO: add code to log these metrics
-        em = output == labels
-        prefix_em = prefix_em(output, labels)
-        acc = 0.0
+        # output = torch.hstack([torch.argmax(output[:, :8]), torch.argmax(output[:, 8:])])
+        # em = output == labels
+        # prefix_em = prefix_em(output, labels)
+        acc = None
 
         # logging
         epoch_loss += loss.item()
-        epoch_acc += acc.item()
+        # epoch_acc += acc.item()
 
     epoch_loss /= len(loader)
     epoch_acc /= len(loader)
@@ -231,11 +233,11 @@ def main(args):
     device = get_device(args.force_cpu)
 
     # get dataloaders
-    train_loader, val_loader, maps = setup_dataloader(args)
+    train_loader, val_loader, actions_to_index, targets_to_index, vocab_to_index, len_cutoff = setup_dataloader(args)
     loaders = {"train": train_loader, "val": val_loader}
 
     # build model
-    model = setup_model(args, maps, device)
+    model = setup_model(args, actions_to_index, targets_to_index, vocab_to_index, len_cutoff)
     print(model)
 
     # get optimizer and loss functions
@@ -263,7 +265,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--batch_size", type=int, default=32, help="size of each batch in loader"
     )
-    parser.add_argument("--force_cpu", action="store_true", help="debug mode")
+    parser.add_argument("--force_cpu", action="store_false", help="debug mode")
     parser.add_argument("--eval", action="store_true", help="run eval")
     parser.add_argument("--num_epochs", default=1000, help="number of training epochs")
     parser.add_argument(
@@ -275,6 +277,8 @@ if __name__ == "__main__":
     # parameters you may need here
     # ===================================================== #
     parser.add_argument("--voc_k", type=int, default=1000, help="vocab size")
+    parser.add_argument("--emb_dim", type=int, default=2, help="embedding dimensions")
+    parser.add_argument("--learning_rate", default=0.0001, help="learning rate")
 
     args = parser.parse_args()
 
