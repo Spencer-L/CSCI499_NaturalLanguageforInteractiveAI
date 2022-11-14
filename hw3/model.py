@@ -21,7 +21,7 @@ class Encoder(nn.Module):
         self.lstm_e = torch.nn.LSTM(input_size=input_len*embedding_dim, hidden_size=encoding_dim, num_layers=1)
 
     def forward(self, x):
-        embeds = self.embedding(x.long()).view((x.shape[0],-1))
+        embeds = self.embedding(x.long()).view((x.shape[0], -1))
         # maxpool_embeds = self.maxpool(embeds)
         h_d, (_, _) = self.lstm_e(embeds.squeeze(1))
         return h_d
@@ -45,6 +45,8 @@ class Decoder(nn.Module):
     def forward(self, h_d):
         a_idx = self.fca(h_d)
         t_idx = self.fct(h_d)
+        torch.nn.functional.softmax(a_idx)
+        torch.nn.functional.softmax(t_idx)
         # self.decoder.lstm_d([a_idx, t_idx])
         return a_idx, t_idx
 
@@ -65,7 +67,6 @@ class EncoderDecoder(nn.Module):
     def forward(self, x):
         h_d = self.encoder(x)
         a_idx, t_idx = self.decoder(h_d)
-
         # breakpoint()
         return torch.hstack((a_idx, t_idx))
 
