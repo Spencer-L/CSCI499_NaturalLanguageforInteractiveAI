@@ -10,18 +10,20 @@ class Encoder(nn.Module):
     """
 
 
-    def __init__(self, embedding_dim, input_len, vocab_size):
+    def __init__(self, embedding_dim, input_len, vocab_size, encoding_dim):
         super().__init__()
-        # # embedding layer
-        # self.embedding = torch.nn.Embedding(vocab_size, embedding_dim, padding_idx=0)
-        #
-        # # maxpool layer
+        # embedding layer
+        self.embedding = torch.nn.Embedding(vocab_size, embedding_dim, padding_idx=0)
+
+        # maxpool layer
         # self.maxpool = torch.nn.MaxPool2d((input_len, 1), ceil_mode=True)
 
-        self.lstm_e = torch.nn.LSTM(input_size=input_len, hidden_size=embedding_dim, num_layers=1)
+        self.lstm_e = torch.nn.LSTM(input_size=input_len*embedding_dim, hidden_size=encoding_dim, num_layers=1)
 
     def forward(self, x):
-        h_d, (_, _) = self.lstm_e(x)
+        embeds = self.embedding(x.long()).view((x.shape[0],-1))
+        # maxpool_embeds = self.maxpool(embeds)
+        h_d, (_, _) = self.lstm_e(embeds.squeeze(1))
         return h_d
 
 
@@ -34,10 +36,10 @@ class Decoder(nn.Module):
     TODO: edit the forward pass arguments to suit your needs
     """
 
-    def __init__(self, embedding_dim, n_acts, n_targets):
+    def __init__(self, encoding_dim, n_acts, n_targets):
         super().__init__()
-        self.fca = torch.nn.Linear(embedding_dim, n_acts)
-        self.fct = torch.nn.Linear(embedding_dim, n_targets)
+        self.fca = torch.nn.Linear(encoding_dim, n_acts)
+        self.fct = torch.nn.Linear(encoding_dim, n_targets)
         # self.lstm_d = torch.nn.LSTM(input_size=embedding_dim, hidden_size=embedding_dim, num_layers=1)
 
     def forward(self, h_d):
@@ -55,13 +57,15 @@ class EncoderDecoder(nn.Module):
 
     def __init__(self, embedding_dim, n_acts, n_targets, n_voc, len_cutoff):
         super().__init__()
-        self.encoder = Encoder(embedding_dim, len_cutoff, n_voc)
-        self.decoder = Decoder(embedding_dim, n_acts, n_targets)
+        encoding_dim = 20
+        self.encoder = Encoder(embedding_dim, len_cutoff, n_voc, encoding_dim)
+        self.decoder = Decoder(encoding_dim, n_acts, n_targets)
         # self.decoder.lstm_d = self.encoder.lstm_e
 
     def forward(self, x):
         h_d = self.encoder(x)
         a_idx, t_idx = self.decoder(h_d)
+
         # breakpoint()
         return torch.hstack((a_idx, t_idx))
 
