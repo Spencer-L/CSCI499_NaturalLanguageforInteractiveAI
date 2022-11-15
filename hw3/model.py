@@ -45,8 +45,8 @@ class Decoder(nn.Module):
     def forward(self, h_d):
         a_idx = self.fca(h_d)
         t_idx = self.fct(h_d)
-        torch.nn.functional.softmax(a_idx)
-        torch.nn.functional.softmax(t_idx)
+        # torch.nn.functional.softmax(a_idx)
+        # torch.nn.functional.softmax(t_idx)
         # self.decoder.lstm_d([a_idx, t_idx])
         return a_idx, t_idx
 
