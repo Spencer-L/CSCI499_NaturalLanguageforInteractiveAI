@@ -124,6 +124,7 @@ def train_epoch(
     # predictions against the ground truth.
     """
 
+    model.train()
     epoch_loss = 0.0
     epoch_acc = 0.0
 
@@ -131,13 +132,15 @@ def train_epoch(
     # NOTE: you may have additional outputs from the loader __getitem__, you can modify this
     for (inputs, labels) in loader:
         # put model inputs to device
-        inputs, labels = inputs.to(device).float(), labels.to(device)
+        inputs, labels = inputs.to(device), labels.to(device).long()
 
         # calculate the loss and train accuracy and perform backprop
         # NOTE: feel free to change the parameters to the model forward pass here + outputs
         output = model(inputs)
-        # breakpoint()
-        loss = criterion(output.squeeze(), labels[:, 0].long())
+
+        l1 = criterion(output[:, :8], labels[:, 0])
+        l2 = criterion(output[:, 8:], labels[:, 1])
+        loss = l1 + l2
 
         # step optimizer and compute gradients during training
         if training:
@@ -154,9 +157,7 @@ def train_epoch(
         # TODO: add code to log these metrics
         output = torch.vstack([output[:, :8].argmax(1), output[:, 8:].argmax(1)]).T
         em = output == labels
-        acc = torch.sum(em[:, 0]*em[:, 1])/output.shape[0]
-        # prefix_em = prefix_em(output, labels)
-        # acc = 0.0
+        acc = torch.sum(em[:, 0]*em[:, 1])/len(output)
 
         # logging
         epoch_loss += loss.item()
@@ -191,10 +192,8 @@ def train(args, model, loaders, optimizer, criterion, device):
     # Train model for a fixed number of epochs
     # In each epoch we compute loss on each sample in our dataset and update the model
     # weights via backpropagation
-    model.train()
 
     for epoch in tqdm.tqdm(range(args.num_epochs)):
-        model.train()
         # train single epoch
         # returns loss for action and target prediction and accuracy
         train_loss, train_acc = train_epoch(
@@ -209,22 +208,20 @@ def train(args, model, loaders, optimizer, criterion, device):
         # some logging
         print(f"train loss : {train_loss}")
 
-        model.eval()
-        with torch.no_grad():
-            # run validation every so often
-            # during eval, we run a forward pass through the model and compute
-            # loss and accuracy but we don't update the model weights
-            if epoch % args.val_every == 0:
-                val_loss, val_acc = validate(
-                    args,
-                    model,
-                    loaders["val"],
-                    optimizer,
-                    criterion,
-                    device,
-                )
+        # run validation every so often
+        # during eval, we run a forward pass through the model and compute
+        # loss and accuracy but we don't update the model weights
+        if epoch % args.val_every == 0:
+            val_loss, val_acc = validate(
+                args,
+                model,
+                loaders["val"],
+                optimizer,
+                criterion,
+                device,
+            )
 
-                print(f"val loss : {val_loss} | val acc: {val_acc}")
+            print(f"val loss : {val_loss} | val acc: {val_acc}")
 
     # ================== TODO: CODE HERE ================== #
     # Task: Implement some code to keep track of the model training and

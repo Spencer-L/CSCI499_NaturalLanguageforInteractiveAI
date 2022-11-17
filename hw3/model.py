@@ -12,18 +12,12 @@ class Encoder(nn.Module):
 
     def __init__(self, embedding_dim, input_len, vocab_size, encoding_dim):
         super().__init__()
-        # embedding layer
         self.embedding = torch.nn.Embedding(vocab_size, embedding_dim, padding_idx=0)
-
-        # maxpool layer
-        # self.maxpool = torch.nn.MaxPool2d((input_len, 1), ceil_mode=True)
-
         self.lstm_e = torch.nn.LSTM(input_size=input_len*embedding_dim, hidden_size=encoding_dim, num_layers=1)
 
     def forward(self, x):
-        embeds = self.embedding(x.long()).view((x.shape[0], -1))
-        # maxpool_embeds = self.maxpool(embeds)
-        h_d, (_, _) = self.lstm_e(embeds.squeeze(1))
+        embeds = self.embedding(x).view((x.shape[0], -1))
+        h_d, (_, _) = self.lstm_e(embeds)
         return h_d
 
 
@@ -57,9 +51,9 @@ class EncoderDecoder(nn.Module):
     TODO: edit the forward pass arguments to suit your needs
     """
 
-    def __init__(self, embedding_dim, n_acts, n_targets, n_voc, len_cutoff):
+    def __init__(self, embedding_dim, n_acts, n_targets, n_voc, len_cutoff,
+                 encoding_dim = 20):
         super().__init__()
-        encoding_dim = 20
         self.encoder = Encoder(embedding_dim, len_cutoff, n_voc, encoding_dim)
         self.decoder = Decoder(encoding_dim, n_acts, n_targets)
         # self.decoder.lstm_d = self.encoder.lstm_e
@@ -67,6 +61,5 @@ class EncoderDecoder(nn.Module):
     def forward(self, x):
         h_d = self.encoder(x)
         a_idx, t_idx = self.decoder(h_d)
-        # breakpoint()
         return torch.hstack((a_idx, t_idx))
 
