@@ -1,5 +1,5 @@
 import json
-import tqdm
+
 import torch
 import argparse
 import datasets
@@ -8,14 +8,19 @@ from sklearn.metrics import accuracy_score
 from torch.utils.data import TensorDataset, DataLoader
 import numpy as np
 import evaluate
-
+from tqdm import tqdm
 from transformers import pipeline, AutoModelForSequenceClassification, AutoTokenizer
 from transformers import TrainingArguments, Trainer
 from transformers import BertConfig, EncoderDecoderConfig, EncoderDecoderModel, BertTokenizer
 from datasets import load_dataset
 
-dataset = load_dataset("json", data_files="lang_to_sem_data.json", field="data")
-print(dataset)
+# data_files = {
+#     "train": "lang_to_sem_data.json"
+# }
+#
+# dataset = load_dataset("json", data_files=data_files)
+# breakpoint()
+# print(dataset)
 
 # def main(args):
 #
@@ -52,69 +57,105 @@ print(dataset)
 #         compute_metrics=compute_metrics,
 #     )
 #     trainer.train()
+import pandas as pd
+class LabeledDataset(torch.utils.data.Dataset):
+    def __init__(self, episodes, tokenizer: BertTokenizer):
+        self.features, self.labels = encode_data(episodes, tokenizer)
+        breakpoint()
+
+        # df = pd.DataFrame([subgoal for episode in episodes for subgoal in episode])
+        # self.features = df[0].values
+        # self.target = df[1].values
+        # self.features = tokenizer(list(, padding=True, return_tensors="pt").input_ids
+        # breakpoint()
+        # self.features =\
+        #     np.array(list(map(
+        #         lambda x: tokenizer(x, return_tensors="pt", padding=True).input_ids,
+        #         self.features.values
+        #     )))
+        # breakpoint()
+        #
+        # self.target = \
+        #     self.target.applymap(
+        #         lambda x: (tokenizer(x[0], return_tensors="pt").input_ids, tokenizer(x[1], return_tensors="pt").input_ids)
+        #     )
+        # breakpoint()
+
+    def __len__(self):
+        return len(self.labels)
+    def __getitem__(self, idx):
+        return self.features[idx], self.labels[idx]
 
 
-# def main(args):
-#     with open(args.in_data_fn, "r") as data:
-#         # create train/val split
-#         read = json.loads(data.read())
-#         train_set = read["train"]
-#         val_set = read["valid_seen"]
-#         # dataset = load_dataset("json", data_files="lang_to_sem_data.json", field="data")
-#         # dataset = datasets.DatasetDict({"train": train_set, "test": val_set})
-#         # dataset = Dataset({})
-#         # dataset = {'train': train_set({})}
-#
-#         # tokenize
-#         tokenizer = BertTokenizer.from_pretrained("bert-base-uncased")
-#
-#         def tokenize_function(examples):
-#             return tokenizer(examples, padding="max_length", truncation=True)
-#
-#         tokenized_datasets = dataset.map(tokenize_function, batched=True)
-#
-#         # model setup
-#         model = EncoderDecoderModel.from_encoder_decoder_pretrained("bert-base-uncased", "bert-base-uncased")
-#
-#
-#
-# if __name__ == "__main__":
-#     parser = argparse.ArgumentParser()
-#     parser.add_argument("--in_data_fn", type=str, help="data file")
-#     parser.add_argument(
-#         "--model_output_dir", type=str, help="where to save model outputs"
-#     )
-#     parser.add_argument(
-#         "--batch_size", type=int, default=32, help="size of each batch in loader"
-#     )
-#     parser.add_argument("--force_cpu", action="store_false", help="debug mode")
-#     parser.add_argument("--eval", action="store_true", help="run eval")
-#     parser.add_argument("--num_epochs", default=1000, help="number of training epochs")
-#     parser.add_argument(
-#         "--val_every", default=5, help="number of epochs between every eval loop"
-#     )
-#
-#     # ================== TODO: CODE HERE ================== #
-#     # Task (optional): Add any additional command line
-#     # parameters you may need here
-#     # ===================================================== #
-#     parser.add_argument("--voc_k", type=int, default=1000, help="vocab size")
-#     parser.add_argument("--emb_dim", type=int, default=2, help="embedding dimensions")
-#     parser.add_argument("--learning_rate", type=float, default=0.0001, help="learning rate")
-#
-#     args = parser.parse_args()
-#
-#     main(args)
+def encode_data(data, tokenizer:BertTokenizer):
+    x = []
+    y = []
+    for episode in tqdm(data, desc='episodes'):
+        for txt, [act, loc] in episode:
+            txt_emb = tokenizer(txt, return_tensors="pt", padding=True).input_ids
+            x.append(txt_emb)
+            act_emb = tokenizer(act, return_tensors="pt").input_ids
+            loc_emb = tokenizer(loc, return_tensors="pt").input_ids
+            y.append(([act_emb, loc_emb]))
+    x = np.array(x)
+    y = np.array(y)
+    return x, y
+
+from transformers import BertTokenizer, EncoderDecoderModel
+def main(args):
+    with open(args.in_data_fn, "r") as data:
+        # create train/val split
+        dataset = json.loads(data.read())
+        train_set = dataset["train"]
+        val_set = dataset["valid_seen"]
+
+    tokenizer = BertTokenizer.from_pretrained("bert-base-uncased")
+
+    train_loader = DataLoader(LabeledDataset(train_set, tokenizer), batch_size=32)
+    breakpoint()
+
+    model = AutoModelForSequenceClassification.from_pretrained("bert-base-uncased", num_labels=2)
+
+    model.config.decoder_start_token_id = tokenizer.cls_token_id
+    model.config.pad_token_id = tokenizer.pad_token_id
+
+    input_ids = tokenizer(train_set[0][0][0], return_tensors="pt").input_ids
+    labels = tokenizer(train_set[0][0][1], return_tensors="pt").input_ids
+
+    loss = model(input_ids=input_ids, labels=labels).loss
+
+    # def tokenize_function(examples):
+    #     return tokenizer(examples, padding="max_length", truncation=True)
+    # tokenized_datasets = dataset.map(tokenize_function, batched=True)
 
 
 
 
-# model_name = ""
-# model = AutoModelForSequenceClassification.from_pretrained(model_name)
-# tokenizer = AutoTokenizer.from_pretrained(model_name)
-#
-# classifier = pipeline("sentiment-analysis", model=model, tokenizer=tokenizer)
-#
-# res = classifier("I love you.")
-#
-# print(res)
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--in_data_fn", type=str, help="data file")
+    parser.add_argument(
+        "--model_output_dir", type=str, help="where to save model outputs"
+    )
+    parser.add_argument(
+        "--batch_size", type=int, default=32, help="size of each batch in loader"
+    )
+    parser.add_argument("--force_cpu", action="store_false", help="debug mode")
+    parser.add_argument("--eval", action="store_true", help="run eval")
+    parser.add_argument("--num_epochs", default=1000, help="number of training epochs")
+    parser.add_argument(
+        "--val_every", default=5, help="number of epochs between every eval loop"
+    )
+
+    # ================== TODO: CODE HERE ================== #
+    # Task (optional): Add any additional command line
+    # parameters you may need here
+    # ===================================================== #
+    parser.add_argument("--voc_k", type=int, default=1000, help="vocab size")
+    parser.add_argument("--emb_dim", type=int, default=2, help="embedding dimensions")
+    parser.add_argument("--learning_rate", type=float, default=0.0001, help="learning rate")
+
+    args = parser.parse_args()
+
+    main(args)

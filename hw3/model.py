@@ -52,7 +52,7 @@ class EncoderDecoder(nn.Module):
     """
 
     def __init__(self, embedding_dim, n_acts, n_targets, n_voc, len_cutoff,
-                 encoding_dim = 20):
+                 encoding_dim=100):
         super().__init__()
         self.encoder = Encoder(embedding_dim, len_cutoff, n_voc, encoding_dim)
         self.decoder = Decoder(encoding_dim, n_acts, n_targets)
