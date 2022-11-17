@@ -56,7 +56,7 @@ def setup_dataloader(args):
     return train_loader, val_loader, actions_to_index, targets_to_index, vocab_to_index, len_cutoff
 
 
-def setup_model(args, actions_to_index, targets_to_index, n_voc, len_cutoff):
+def setup_model(args, actions_to_index, targets_to_index, n_voc, len_cutoff, device):
     """
     return:
         - model: YourOwnModelClass
@@ -79,6 +79,7 @@ def setup_model(args, actions_to_index, targets_to_index, n_voc, len_cutoff):
     # you will give the embedding of the target token.
     # ===================================================== #
     model = EncoderDecoder(args.emb_dim, len(actions_to_index), len(targets_to_index), len(n_voc), len_cutoff)
+    model.to(device)
     return model
 
 
@@ -193,7 +194,7 @@ def train(args, model, loaders, optimizer, criterion, device):
     model.train()
 
     for epoch in tqdm.tqdm(range(args.num_epochs)):
-
+        model.train()
         # train single epoch
         # returns loss for action and target prediction and accuracy
         train_loss, train_acc = train_epoch(
@@ -208,20 +209,22 @@ def train(args, model, loaders, optimizer, criterion, device):
         # some logging
         print(f"train loss : {train_loss}")
 
-        # run validation every so often
-        # during eval, we run a forward pass through the model and compute
-        # loss and accuracy but we don't update the model weights
-        if epoch % args.val_every == 0:
-            val_loss, val_acc = validate(
-                args,
-                model,
-                loaders["val"],
-                optimizer,
-                criterion,
-                device,
-            )
+        model.eval()
+        with torch.no_grad():
+            # run validation every so often
+            # during eval, we run a forward pass through the model and compute
+            # loss and accuracy but we don't update the model weights
+            if epoch % args.val_every == 0:
+                val_loss, val_acc = validate(
+                    args,
+                    model,
+                    loaders["val"],
+                    optimizer,
+                    criterion,
+                    device,
+                )
 
-            print(f"val loss : {val_loss} | val acc: {val_acc}")
+                print(f"val loss : {val_loss} | val acc: {val_acc}")
 
     # ================== TODO: CODE HERE ================== #
     # Task: Implement some code to keep track of the model training and
@@ -238,7 +241,7 @@ def main(args):
     loaders = {"train": train_loader, "val": val_loader}
 
     # build model
-    model = setup_model(args, actions_to_index, targets_to_index, vocab_to_index, len_cutoff)
+    model = setup_model(args, actions_to_index, targets_to_index, vocab_to_index, len_cutoff, device)
     print(model)
 
     # get optimizer and loss functions
@@ -266,7 +269,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--batch_size", type=int, default=32, help="size of each batch in loader"
     )
-    parser.add_argument("--force_cpu", action="store_false", help="debug mode")
+    parser.add_argument("--force_cpu", action="store_true", help="debug mode")
     parser.add_argument("--eval", action="store_true", help="run eval")
     parser.add_argument("--num_epochs", default=1000, help="number of training epochs")
     parser.add_argument(
