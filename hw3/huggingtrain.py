@@ -63,9 +63,6 @@ def main(args):
     print('Loading Tokenizer')
     tokenizer = DistilBertTokenizerFast.from_pretrained('distilbert-base-uncased')
 
-    # TODO remove next line
-    train_episodes = train_episodes[:100]
-
     print('Loading and tokenizing training dataset')
     encodings, actions, targets, label_to_index =\
         tokenize_episodes(train_episodes, tokenizer)
@@ -88,8 +85,8 @@ def main(args):
     print('Setting up arguments')
     training_args = TrainingArguments(
         output_dir='./results',          # output directory
-        num_train_epochs=3,              # total number of training epochs
-        per_device_train_batch_size=16,  # batch size per device during training
+        num_train_epochs=5,              # total number of training epochs
+        per_device_train_batch_size=64,  # batch size per device during training
         per_device_eval_batch_size=64,   # batch size for evaluation
         warmup_steps=500,                # number of warmup steps for learning rate scheduler
         weight_decay=0.01,               # strength of weight decay
@@ -99,13 +96,19 @@ def main(args):
     )
     print(training_args)
 
-    metric = load_metric('accuracy')
     def compute_metrics(eval_pred):
-        breakpoint()
+        num_actions = len(label_to_index[0])
         predictions, labels = eval_pred
-        breakpoint()
-        predictions = np.argmax(predictions, axis=1)
-        return metric.compute(predictions=predictions, references=labels)
+        actions_preds = predictions[:, :num_actions].argmax(1)
+        target_preds = predictions[:, num_actions:].argmax(1)
+        actions_labels = labels[:, :num_actions].argmax(1)
+        target_labels = labels[:, num_actions:].argmax(1)
+
+        em1 = actions_preds == actions_labels
+        em2 = target_preds == target_labels
+
+        acc = np.sum(em1*em2)/len(em1)
+        return {'accuracy': acc}
 
     trainer = Trainer(
         model=model,                         
