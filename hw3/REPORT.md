@@ -6,5 +6,7 @@ Learning Rate: I determined that 0.01 seemed to be a learning rate that provided
 
 Epochs: I set the epochs to 50 because I noticed that the val accuracy tops out around 20 epochs.  The extra 30 epochs are there just for me to observe the behaviour of the model after that moment.
 
-Embedding Dimensions: I found that 50 dimensions was good so as to provide good performance without unnecessary strain on my machine.
+Embedding Dimensions: It seemed that other papers used embedding dimensions around 50, so I went with that.
+
+
 

@@ -136,7 +136,7 @@ if __name__ == "__main__":
     )
     parser.add_argument("--force_cpu", action="store_true", help="debug mode")
     parser.add_argument("--eval", action="store_true", help="run eval")
-    parser.add_argument("--num_epochs", default=1000, help="number of training epochs")
+    parser.add_argument("--num_epochs", default=50, help="number of training epochs")
     parser.add_argument(
         "--val_every", default=5, help="number of epochs between every eval loop"
     )
