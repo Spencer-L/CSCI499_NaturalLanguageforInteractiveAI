@@ -268,7 +268,7 @@ if __name__ == "__main__":
     )
     parser.add_argument("--force_cpu", action="store_true", help="debug mode")
     parser.add_argument("--eval", action="store_true", help="run eval")
-    parser.add_argument("--num_epochs", default=1000, help="number of training epochs")
+    parser.add_argument("--num_epochs", default=200, help="number of training epochs")
     parser.add_argument(
         "--val_every", default=5, help="number of epochs between every eval loop"
     )
@@ -277,7 +277,7 @@ if __name__ == "__main__":
     # Task (optional): Add any additional command line
     # parameters you may need here
     # ===================================================== #
-    parser.add_argument("--voc_k", type=int, default=50, help="vocab size")
+    parser.add_argument("--voc_k", type=int, default=1000, help="vocab size")
     parser.add_argument("--emb_dim", type=int, default=2, help="embedding dimensions")
     parser.add_argument("--learning_rate", type=float, default=0.0001, help="learning rate")
 
