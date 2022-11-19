@@ -1,147 +1,123 @@
 import json
-
 import torch
 import argparse
-import datasets
-import torch.nn.functional as F
-from sklearn.metrics import accuracy_score
-from torch.utils.data import TensorDataset, DataLoader
-import numpy as np
-import evaluate
-from tqdm import tqdm
-from transformers import pipeline, AutoModelForSequenceClassification, AutoTokenizer
-from transformers import TrainingArguments, Trainer
-from transformers import BertConfig, EncoderDecoderConfig, EncoderDecoderModel, BertTokenizer
-from datasets import load_dataset
-
-# data_files = {
-#     "train": "lang_to_sem_data.json"
-# }
-#
-# dataset = load_dataset("json", data_files=data_files)
-# breakpoint()
-# print(dataset)
-
-# def main(args):
-#
-#     dataset = load_dataset("SetFit/yelp_review_full")
-#
-#     tokenizer = AutoTokenizer.from_pretrained("bert-base-cased")
-#
-#     def tokenize_function(examples):
-#         return tokenizer(examples["text"], padding="max_length", truncation=True)
-#
-#
-#     tokenized_datasets = dataset.map(tokenize_function, batched=True)
-#
-#     print(tokenized_datasets)
-#
-#     # model creation
-#     model = AutoModelForSequenceClassification.from_pretrained("bert-base-cased", num_labels=5)
-#
-#     # training
-#     training_args = TrainingArguments(output_dir="test_trainer", evaluation_strategy="epoch")
-#     small_train_dataset = tokenized_datasets["train"].shuffle(seed=42).select(range(1000))
-#     small_eval_dataset = tokenized_datasets["test"].shuffle(seed=42).select(range(1000))
-#     # evaluation
-#     metric = evaluate.load("accuracy")
-#     def compute_metrics(eval_pred):
-#         logits, labels = eval_pred
-#         predictions = np.argmax(logits, axis=-1)
-#         return metric.compute(predictions=predictions, references=labels)
-#     trainer = Trainer(
-#         model=model,
-#         args=training_args,
-#         train_dataset=small_train_dataset,
-#         eval_dataset=small_eval_dataset,
-#         compute_metrics=compute_metrics,
-#     )
-#     trainer.train()
 import pandas as pd
-class LabeledDataset(torch.utils.data.Dataset):
-    def __init__(self, episodes, tokenizer: BertTokenizer):
-        self.features, self.labels = encode_data(episodes, tokenizer)
-        breakpoint()
 
-        # df = pd.DataFrame([subgoal for episode in episodes for subgoal in episode])
-        # self.features = df[0].values
-        # self.target = df[1].values
-        # self.features = tokenizer(list(, padding=True, return_tensors="pt").input_ids
-        # breakpoint()
-        # self.features =\
-        #     np.array(list(map(
-        #         lambda x: tokenizer(x, return_tensors="pt", padding=True).input_ids,
-        #         self.features.values
-        #     )))
-        # breakpoint()
-        #
-        # self.target = \
-        #     self.target.applymap(
-        #         lambda x: (tokenizer(x[0], return_tensors="pt").input_ids, tokenizer(x[1], return_tensors="pt").input_ids)
-        #     )
-        # breakpoint()
+from utils import (get_device)
+from torch.utils.data import Dataset, DataLoader
+from tqdm import tqdm
+from transformers import DistilBertForSequenceClassification, Trainer, TrainingArguments
+from transformers import DistilBertTokenizerFast
+from transformers import TrainingArguments, Trainer
+
+
+class LabeledDataset(torch.utils.data.Dataset):
+    def __init__(self, encodings, actions, targets):
+        self.encodings = encodings
+        self.actions = actions
+        self.targets = targets
 
     def __len__(self):
-        return len(self.labels)
+        return len(self.actions)
+
     def __getitem__(self, idx):
-        return self.features[idx], self.labels[idx]
+        item = {key: torch.tensor(val[idx]) for key, val in self.encodings.items()}
+        # breakpoint()
+        item['labels'] = torch.tensor(self.actions[idx])
+        # TODO include targets as well 
+        return item
+
+def tokenize_episodes(episodes, tokenizer, label_to_index=None):
+    df = pd.DataFrame(
+        [(subgoal[0], subgoal[1][0], subgoal[1][1])
+        for episode in episodes for subgoal in episode],
+        columns=['command', 'action', 'target'] 
+    )
+    encodings = tokenizer(df['command'].to_list(), truncation=True, padding=True)
+
+    if label_to_index is None:
+        act_to_idx = {l: i for i, l in enumerate(df['action'].unique())}
+        trgt_to_idx = {l: i for i, l in enumerate(df['target'].unique())}
+        label_to_index = [act_to_idx, trgt_to_idx]
+    
+    def _label_to_index(label_to_index, x):
+        idx = label_to_index.get(x)
+        if idx is None:
+            return label_to_index.get(0)
+        return idx
+
+    actions = df['action'].apply(lambda x: _label_to_index(label_to_index[0], x))
+    targets = df['target'].apply(lambda x: _label_to_index(label_to_index[1], x))
+    return encodings, actions, targets, label_to_index
 
 
-def encode_data(data, tokenizer:BertTokenizer):
-    x = []
-    y = []
-    for episode in tqdm(data, desc='episodes'):
-        for txt, [act, loc] in episode:
-            txt_emb = tokenizer(txt, return_tensors="pt", padding=True).input_ids
-            x.append(txt_emb)
-            act_emb = tokenizer(act, return_tensors="pt").input_ids
-            loc_emb = tokenizer(loc, return_tensors="pt").input_ids
-            y.append(([act_emb, loc_emb]))
-    x = np.array(x)
-    y = np.array(y)
-    return x, y
-
-from transformers import BertTokenizer, EncoderDecoderModel
 def main(args):
+    device = get_device(args.force_cpu)
     with open(args.in_data_fn, "r") as data:
         # create train/val split
         dataset = json.loads(data.read())
-        train_set = dataset["train"]
-        val_set = dataset["valid_seen"]
+        train_episodes = dataset["train"]
+        val_episodes = dataset["valid_seen"]
 
-    tokenizer = BertTokenizer.from_pretrained("bert-base-uncased")
+    print('Loading Tokenizer')
+    tokenizer = DistilBertTokenizerFast.from_pretrained('distilbert-base-uncased')
 
-    train_loader = DataLoader(LabeledDataset(train_set, tokenizer), batch_size=32)
-    breakpoint()
+    # TODO remove next line
+    train_episodes = train_episodes[:100]
 
-    model = AutoModelForSequenceClassification.from_pretrained("bert-base-uncased", num_labels=2)
+    print('Loading and tokenizing training dataset')
+    encodings, actions, targets, label_to_index =\
+        tokenize_episodes(train_episodes, tokenizer)
+    train_dataset = LabeledDataset(encodings, actions, targets)
+    
+    print('Loading and tokenizing validation dataset')
+    encodings, actions, targets, label_to_index =\
+        tokenize_episodes(val_episodes, tokenizer, label_to_index=label_to_index)
+    val_dataset = LabeledDataset(encodings, actions, targets)
 
-    model.config.decoder_start_token_id = tokenizer.cls_token_id
-    model.config.pad_token_id = tokenizer.pad_token_id
+    print('Loading classification model')
+    model = DistilBertForSequenceClassification.from_pretrained(
+        "distilbert-base-uncased", problem_type="multi_label_classification", num_labels=len(label_to_index)
+    )
+    # model.config.decoder_start_token_id = tokenizer.cls_token_id
+    # model.config.pad_token_id = tokenizer.pad_token_id
 
-    input_ids = tokenizer(train_set[0][0][0], return_tensors="pt").input_ids
-    labels = tokenizer(train_set[0][0][1], return_tensors="pt").input_ids
+    print('Setting up arguments')
+    training_args = TrainingArguments(
+        output_dir='./results',          # output directory
+        num_train_epochs=3,              # total number of training epochs
+        per_device_train_batch_size=16,  # batch size per device during training
+        per_device_eval_batch_size=64,   # batch size for evaluation
+        warmup_steps=500,                # number of warmup steps for learning rate scheduler
+        weight_decay=0.01,               # strength of weight decay
+        logging_dir='./logs',            # directory for storing logs
+        logging_steps=10,
+    )
+    print(training_args)
 
-    loss = model(input_ids=input_ids, labels=labels).loss
-
-    # def tokenize_function(examples):
-    #     return tokenizer(examples, padding="max_length", truncation=True)
-    # tokenized_datasets = dataset.map(tokenize_function, batched=True)
-
-
-
+    trainer = Trainer(
+        model=model,                         # the instantiated 🤗 Transformers model to be trained
+        args=training_args,                  # training arguments, defined above
+        train_dataset=train_dataset,         # training dataset
+        eval_dataset=val_dataset             # evaluation dataset
+    )
+    # trainer.to(device)
+    print(trainer)
+    
+    print('Starting training')
+    trainer.train()
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--in_data_fn", type=str, help="data file")
+    parser.add_argument("--in_data_fn", default="lang_to_sem_data.json", type=str, help="data file")
     parser.add_argument(
         "--model_output_dir", type=str, help="where to save model outputs"
     )
     parser.add_argument(
         "--batch_size", type=int, default=32, help="size of each batch in loader"
     )
-    parser.add_argument("--force_cpu", action="store_false", help="debug mode")
+    parser.add_argument("--force_cpu", action="store_true", help="debug mode")
     parser.add_argument("--eval", action="store_true", help="run eval")
     parser.add_argument("--num_epochs", default=1000, help="number of training epochs")
     parser.add_argument(
