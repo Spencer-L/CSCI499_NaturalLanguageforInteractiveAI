@@ -277,7 +277,7 @@ if __name__ == "__main__":
     # Task (optional): Add any additional command line
     # parameters you may need here
     # ===================================================== #
-    parser.add_argument("--voc_k", type=int, default=1000, help="vocab size")
+    parser.add_argument("--voc_k", type=int, default=50, help="vocab size")
     parser.add_argument("--emb_dim", type=int, default=2, help="embedding dimensions")
     parser.add_argument("--learning_rate", type=float, default=0.0001, help="learning rate")
 
