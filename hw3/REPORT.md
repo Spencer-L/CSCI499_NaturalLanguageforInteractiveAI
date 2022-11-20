@@ -42,6 +42,7 @@ evaluation_strategy="epoch" (prints an accuracy evaluation at every epoch)
 
 As of the time of writing, the model is currently training.  Due to computational constraints (I'm running this large model on a GTX 1050 Ti Max-Q mobile gpu), the model takes 9 hours to train 5 epochs.  I lack the necessary VRAM (I only have 4 Gb) to load this model with a substantial batch size above 64.  Until then, I cannot ascertain the performance of my HuggingFace implementation.  However, I can probably extrapolate that this implementation will have much better results than my seq2seq without attention since 67% isn't a particularly high accuracy for this specific task.  A pretrained LLM with finetuning should easily outgun my seq2seq.
 
+*edit: I ran the model through a few epochs (pdf in repo) and observed that the accuracy is as high as around 79% with near-zero loss.  This confirms my speculations that the Transformer implementation will have far better performance than the base implementation.
 
 
 Seq2Seq Encoder Decoder + Attention Mechanism

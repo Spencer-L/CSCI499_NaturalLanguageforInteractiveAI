@@ -86,7 +86,7 @@ def main(args):
     training_args = TrainingArguments(
         output_dir='./results',          
         num_train_epochs=5,              
-        per_device_train_batch_size=64,  
+        per_device_train_batch_size=32,
         per_device_eval_batch_size=64,   
         warmup_steps=500,                
         weight_decay=0.01,               
